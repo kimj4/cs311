@@ -30,25 +30,26 @@ bool mouseDown = false;
 double r = 255.0;
 double g = 255.0;
 double b = 255.0;
-double brushSize = 1;
+int brushSize = 1;
 
+/* Helper function to set current color*/
 void setColor(double rr, double gg, double bb) {
 	r = rr;
 	g = gg;
 	b = bb;
 }
 
+/* Helper function to set current brush size. Default is 1x1 pixel.
+   brushes are currently squares of sizes 1x1 3x3 ... 499x499 */
 void changeBrushSize(double offset) { 
-	// size is is 1x1 3x3 5x5 ... with the cursor being the center pixel
 	if (offset > 0) {
-		if (brushSize < 99) {
+		if (brushSize < 500) {
 			brushSize = brushSize + 2;	
 		} 
 	} else {
 		if (brushSize > 1) {
 			brushSize = brushSize - 2;	
 		}
-		
 	}
 }
 
@@ -57,7 +58,9 @@ void draw(double x, double y) {
 	int i, j;
 	double curX = x - ((brushSize - 1) / 2);
 	double curY = y - ((brushSize - 1) / 2);
+	printf("x: %f, y: %f, curX: %f, curY: %f\n", x, y, curX, curY);
 	for (i = 0; i < brushSize; i++) {
+		curX = x - ((brushSize - 1) / 2);
 		for (j = 0; j < brushSize; j++) {
 			pixSetRGB(curX, curY, r, g, b);
 			curX = curX + 1.0;
@@ -128,6 +131,7 @@ void handleMouseMove(double x, double y) {
 }
 
 void handleMouseScroll(double xOffset, double yOffset) {
+	changeBrushSize(yOffset);
 	printf("mouse scroll xOffset %f yOffset %f\n", xOffset, yOffset);
 }
 
@@ -145,6 +149,7 @@ void handleTimeStep(double oldTime, double newTime) {
 int main(void) {
 	/* Make a 512 x 512 window with the title 'Pixel Graphics'. This function
 	returns 0 if no error occurred. */
+	// if (pixInitialize(1600, 900, "Pixel Graphics") != 0)
 	if (pixInitialize(512, 512, "Pixel Graphics") != 0)
 		return 1;
 	else {
@@ -160,9 +165,7 @@ int main(void) {
 		pixClearRGB(0.0, 0.0, 0.0);
 		/* Draw the graph of y = 500 sin (x / 50) in yellow. Notice that
 		pixSetRGB ignores attempts to set pixels outside the window. */
-		int i;
-		for (i = 0; i < 512; i = i + 1)
-			pixSetRGB(i, 500.0 * sin(i / 50.0), 1.0, 1.0, 0.0);
+
 		/* Run the event loop. The callbacks that were registered above are
 		invoked as needed. At the end, the resources supporting the window are
 		deallocated. */
