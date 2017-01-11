@@ -5,313 +5,215 @@
  * homework for day 3, adding interpolation on triangle rasterization.
  */
 
-
+// TODO: figure out import stuff
+// TODO: use more vector + matrix operations
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
 #include "000pixel.h"
 
-// new triRender
+// TODO: combine calculateP and calculateQ to create a void function
+double calculateP(double leftMatrix[2][2], double xMinusA[2]) {
+	double resultCol[2];
+	mat221Multiply(leftMatrix, xMinusA, resultCol);
+
+	return resultCol[0];
+}
+
+double calculateQ(double leftMatrix[2][2], double xMinusA[2]) {
+	double resultCol[2];
+	mat221Multiply(leftMatrix, xMinusA, resultCol);
+	return resultCol[1];
+}
+
+// TODO: combine calculateR, calculateG, calculateB to make on void function
+double caluclateNewR(double alpha0, double beta0, double gamma0, double p, double q) {
+	return alpha0 + (p * (beta0 - alpha0)) + (q * (gamma0 - alpha0));
+}
+
+double calculateNewG(double alpha1, double beta1, double gamma1, double p, double q) {
+	return alpha1 + (p * (beta1 - alpha1)) + (q * (gamma1 - alpha1));
+}
+
+double calculateNewB(double alpha2, double beta2, double gamma2, double p, double q) {
+	return alpha2 + (p * (beta2 - alpha2)) + (q * (gamma2 - alpha2));
+}
+
+
+
 void triRender(double a[2], double b[2], double c[2], double rgb[3], 
 	double alpha[3], double beta[3], double gamma[3]) {
-		// sorting
+
 	double aa0, aa1, bb0, bb1, cc0, cc1;
 	double abcArray[3][2] = {{a[0], a[1]}, {b[0], b[1]}, {c[0], c[1]}};
-	double sortedArray[3][2];
-	int curIdx = 0;
-	int i;
+
+	// move around alpha, beta, gamma in the same way as a, b, c
+	double abgArray[3][3] = {{alpha[0], alpha[1], alpha[2]}, 
+							 {beta[0], beta[1], beta[2]}, 
+							 {gamma[0], gamma[1], gamma[2]}};
+	double newAlpha[3], newBeta[3], newGamma[3];
+;
 
 	// find aa (leftmost)
-	int aaPos = 0;
-	for (i = 1; i < 3; i++) {
-		// find leftmost
-		if (abcArray[aaPos][0] > abcArray[i][0]) {
+	int i;
+	int aaPos, bbPos, ccPos;
+	aaPos = -1;
+	for (i = 0; i < 3; i++) {
+		if (aaPos == -1) {
 			aaPos = i;
-		} else if (abcArray[aaPos][0] == abcArray[i][0]) {
-			if (abcArray[aaPos][1] > abcArray[i][1]) 
-				// if horizontal position conflicts, pick the one that is vertically lower
+		} else {
+			// find leftmost
+			if (abcArray[aaPos][0] > abcArray[i][0]) {
 				aaPos = i;
-		}
-	}
-	aa0 = abcArray[aaPos][0];
-	aa1 = abcArray[aaPos][1];
-	printf("abcArray: \n");
-	int j;
-	for (j = 0; j < 3; j++) {
-		printf("(%f, %f)\n", abcArray[j][0],abcArray[j][1]);
-	}
-
-	double bcArray[2][2];
-	switch (aaPos) {
-		case (0): {
-			printf("case 0\n");
-			bcArray[0][0] = abcArray[1][0];
-			bcArray[0][1] = abcArray[1][1];
-			bcArray[1][0] = abcArray[2][0];
-			bcArray[1][1] = abcArray[2][1];
-			break;
-		}
-		case (1): {
-			printf("case 1\n");
-			bcArray[0][0] = abcArray[0][0];
-			bcArray[0][1] = abcArray[0][1];
-			bcArray[1][0] = abcArray[2][0];
-			bcArray[1][1] = abcArray[2][1];
-			break;
-		}
-		case (2): {
-			printf("case 2\n");
-			bcArray[0][0] = abcArray[0][0];
-			bcArray[0][1] = abcArray[0][1];
-			bcArray[1][0] = abcArray[1][0];
-			bcArray[1][1] = abcArray[1][1];
-			break;
+			} else if (abcArray[aaPos][0] == abcArray[i][0]) {
+				if (abcArray[aaPos][1] > abcArray[i][1]) 
+					// if horizontal position conflicts, pick the one that is vertically lower
+					aaPos = i;
+			}
 		}
 	}
 
-	printf("bcArray: \n");
-	int k;
-	for (k = 0; k < 2; k++) {
-		printf("(%f, %f)\n", bcArray[k][0],bcArray[k][1]);
+	// t1, t2 are temp vars to keep track of the two remaining unsorted verticies
+	int t1, t2;
+	int tempCount = 0;
+	for (i = 0; i < 3; i++) {
+		if (i != aaPos) {
+			if (tempCount == 0) {
+				t1 = i;
+				tempCount++;
+			} else {
+				t2 = i;
+			}
+		}
 	}
 
-	if (bcArray[0][0] > bcArray[1][0]) { // compare horizontal positions 
-		if (bcArray[0][1] <= bcArray[1][1]) { // compare vertical positions
-			printf("1\n");
-			bb0 = bcArray[0][0];
-			bb1 = bcArray[0][1];
-			cc0 = bcArray[1][0];
-			cc1 = bcArray[1][1];
-		} else {
-			printf("2\n");
-			bb0 = bcArray[1][0];
-			bb1 = bcArray[1][1];
-			cc0 = bcArray[0][0];
-			cc1 = bcArray[0][1];
-		} 
+	// using tangent theta identity to determine which has a smaller angle from the 
+	//  horizontal axis
+	if ((abcArray[t1][1] / abcArray[t1][0]) < (abcArray[t2][1] / abcArray[t2][0])) {
+		bbPos = t1;
+		ccPos = t2;
 	} else {
-		if (bcArray[0][1] >= bcArray[1][1]) {
-			printf("3\n");
-			bb0 = bcArray[1][0];
-			bb1 = bcArray[1][1];
-			cc0 = bcArray[0][0];
-			cc1 = bcArray[0][1];
-		} else {
-			printf("4\n");
-			bb0 = bcArray[0][0];
-			bb1 = bcArray[0][1];
-			cc0 = bcArray[1][0];
-			cc1 = bcArray[1][1];
-		}
+		bbPos = t2;
+		ccPos = t1;
 	}
-	printf("aa: (%f, %f)\n", aa0, aa1);
-	printf("bb: (%f, %f)\n", bb0, bb1);
-	printf("cc: (%f, %f)\n", cc0, cc1);
-   
 
-	int x0, x1;
-	double x1low, x1high;
+	// set rearranged variables
+	// TODO: combine aa0,aa1 bb0,bb1 ... into aa, bb, cc
+	double aa[2] = {abcArray[aaPos][0], abcArray[aaPos][0]}; 
+	aa0 = abcArray[aaPos][0];
+	aa1 = abcArray[aaPos][0];
+	bb0 = abcArray[bbPos][0];
+	bb1 = abcArray[bbPos][1];
+	cc0 = abcArray[ccPos][0];
+	cc1 = abcArray[ccPos][1];
+
+	newAlpha[0] = abgArray[aaPos][0];
+	newAlpha[1] = abgArray[aaPos][1];
+	newAlpha[2] = abgArray[aaPos][2];
+	newBeta[0] = abgArray[bbPos][0];
+	newBeta[1] = abgArray[bbPos][1];
+	newBeta[2] = abgArray[bbPos][2];
+	newGamma[0] = abgArray[ccPos][0];
+	newGamma[1] = abgArray[ccPos][1];
+	newGamma[2] = abgArray[ccPos][2];
+
+	// find the matrix that multiplies (x - a) this is constant
+	// TODO: refactor this bit
+	double bMinusA[2] = {bb0 - aa0, bb1 - aa1};
+	double cMinusA[2] = {cc0 - aa0, cc1 - aa1};
+	double leftMatrix[2][2];
+	mat22Columns(bMinusA, cMinusA, leftMatrix);
+	double invLeftMatrix[2][2];
+	mat22Invert(leftMatrix, invLeftMatrix);   
+
+
+
+	int x0, x1; // TODO: see if these should be doubles
+	double x1low, x1high, p, q, newR, newG, newB;
+	double xMinusA[2], x[2];
 	// special case handling for vertical line
 	if ((aa0 == bb0) && (bb0 == cc0)) {
 		x0 = aa0;
 		for (x1 = ceil(aa1); x1 <= floor(cc1); x1++) {
-			pixSetRGB(x0, x1, rgb[0], rgb[1], rgb[2]);
+			// TODO: refactor this bit of repeated code
+			xMinusA[0] = x0 - aa0;
+			xMinusA[1] = x1 - aa1;
+			p = calculateP(invLeftMatrix, xMinusA);
+			q = calculateQ(invLeftMatrix, xMinusA);
+			newR = caluclateNewR(alpha[0], beta[0], gamma[0], p, q);
+			newG = calculateNewG(alpha[1], beta[1], gamma[1], p, q);
+			newB = calculateNewB(alpha[2], beta[2], gamma[2], p, q);
 		}
 	}
 	// base of the triangle is the bottom-most edge
 	else if ((bb0 > cc0) || (aa0 == cc0) || (bb0 == cc0)) {
+		printf("HERE\n");
 		for (x0 = ceil(aa0); x0 <= floor(cc0); x0++) {
 			x1low = aa1 + ((bb1 - aa1) / (bb0 - aa0)) * (x0 - aa0);
 			x1high = aa1 + ((cc1 - aa1) / (cc0 - aa0)) * (x0 - aa0);
 			for (x1 = ceil(x1low); x1 <= floor(x1high); x1++) {
-				pixSetRGB(x0, x1, rgb[0], rgb[1], rgb[2]);
+				x[0] = x0;
+				x[1] = x1;
+				vecSubtract(2, x, aa, xMinusA);
+				p = calculateP(invLeftMatrix, xMinusA);
+				q = calculateQ(invLeftMatrix, xMinusA);
+				newR = caluclateNewR(alpha[0], beta[0], gamma[0], p, q);
+				newG = calculateNewG(alpha[1], beta[1], gamma[1], p, q);
+				newB = calculateNewB(alpha[2], beta[2], gamma[2], p, q);
+				pixSetRGB(x0, x1, newR, newB, newG);
 			}
 		}
 		for (x0 = ceil(cc0); x0 <= floor(bb0); x0++) {
 			x1low = aa1 + ((bb1 - aa1) / (bb0 - aa0)) * (x0 - aa0);
 			x1high = cc1 + ((bb1 - cc1) / (bb0 - cc0)) * (x0 - cc0);
 			for (x1 = ceil(x1low); x1<= floor(x1high); x1++) {
-				pixSetRGB(x0, x1, rgb[0], rgb[1], rgb[2]);
+				x[0] = x0;
+				x[1] = x1;
+				vecSubtract(2, x, aa, xMinusA);
+				p = calculateP(invLeftMatrix, xMinusA);
+				q = calculateQ(invLeftMatrix, xMinusA);
+				newR = caluclateNewR(alpha[0], beta[0], gamma[0], p, q);
+				newG = calculateNewG(alpha[1], beta[1], gamma[1], p, q);
+				newB = calculateNewB(alpha[2], beta[2], gamma[2], p, q);
+				pixSetRGB(x0, x1, newR, newB, newG);
 			} 
 		}
 	// base of the triangle is the top-most edge
 	} else {
-		printf("else\n");
 		for (x0 = ceil(aa0); x0 <= floor(bb0); x0++) {
-			// printf("else: first for loop\n");
 			x1low = aa1 + ((bb1 - aa1) / (bb0 - aa0)) * (x0 - aa0);
 			x1high = aa1 + ((cc1 - aa1) / (cc0 - aa0)) * (x0 - aa0);
-			printf("x1low: %f, x1high: %f \n", x1low, x1high);
 			if ((ceil(aa0) == floor(cc0))) {
-				printf("breaks\n");
 				break;
 			} else {
 				for (x1 = ceil(x1low); x1 <= floor(x1high); x1++) {
-					// printf("else: inner for loop\n");
-					pixSetRGB(x0, x1, rgb[0], rgb[1], rgb[2]);
+					x[0] = x0;
+					x[1] = x1;
+					vecSubtract(2, x, aa, xMinusA);
+					p = calculateP(invLeftMatrix, xMinusA);
+					q = calculateQ(invLeftMatrix, xMinusA);
+					newR = caluclateNewR(alpha[0], beta[0], gamma[0], p, q);
+					newG = calculateNewG(alpha[1], beta[1], gamma[1], p, q);
+					newB = calculateNewB(alpha[2], beta[2], gamma[2], p, q);
+					pixSetRGB(x0, x1, newR, newB, newG);
 				}
 			}
 		}
-		printf("else: exits first for loop\n");
 		for (x0 = ceil(bb0); x0 <= floor(cc0); x0++) {
 			// printf("else: second for loop\n")	;
 			x1low = bb1 + ((cc1 - bb1) / (cc0 - bb0)) * (x0 - bb0);
 			x1high = aa1 + ((cc1 - aa1) / (cc0 - aa0)) * (x0 - aa0);
 			for (x1 = ceil(x1low); x1 <= floor(x1high); x1++) {
-				pixSetRGB(x0, x1, rgb[0], rgb[1], rgb[2]);
+				x[0] = x0;
+				x[1] = x1;
+				vecSubtract(2, x, aa, xMinusA);
+				p = calculateP(invLeftMatrix, xMinusA);
+				q = calculateQ(invLeftMatrix, xMinusA);
+				newR = caluclateNewR(alpha[0], beta[0], gamma[0], p, q);
+				newG = calculateNewG(alpha[1], beta[1], gamma[1], p, q);
+				newB = calculateNewB(alpha[2], beta[2], gamma[2], p, q);
+				pixSetRGB(x0, x1, newR, newB, newG);
 			}
 		}
 	}
 }
-
-// void triRenderOld(double a0, double a1, double b0, double b1, double c0, 
-//         double c1, double r, double g, double b) {
-
-// 	// sorting
-// 	double aa0, aa1, bb0, bb1, cc0, cc1;
-// 	double abcArray[3][2] = {{a0, a1}, {b0, b1}, {c0, c1}};
-// 	double sortedArray[3][2];
-// 	int curIdx = 0;
-// 	int i;
-
-// 	// find aa (leftmost)
-// 	int aaPos = 0;
-// 	for (i = 1; i < 3; i++) {
-// 		// find leftmost
-// 		if (abcArray[aaPos][0] > abcArray[i][0]) {
-// 			aaPos = i;
-// 		} else if (abcArray[aaPos][0] == abcArray[i][0]) {
-// 			if (abcArray[aaPos][1] > abcArray[i][1]) 
-// 				// if horizontal position conflicts, pick the one that is vertically lower
-// 				aaPos = i;
-// 		}
-// 	}
-// 	aa0 = abcArray[aaPos][0];
-// 	aa1 = abcArray[aaPos][1];
-// 	printf("abcArray: \n");
-// 	int j;
-// 	for (j = 0; j < 3; j++) {
-// 		printf("(%f, %f)\n", abcArray[j][0],abcArray[j][1]);
-// 	}
-
-// 	double bcArray[2][2];
-// 	switch (aaPos) {
-// 		case (0): {
-// 			printf("case 0\n");
-// 			bcArray[0][0] = abcArray[1][0];
-// 			bcArray[0][1] = abcArray[1][1];
-// 			bcArray[1][0] = abcArray[2][0];
-// 			bcArray[1][1] = abcArray[2][1];
-// 			break;
-// 		}
-// 		case (1): {
-// 			printf("case 1\n");
-// 			bcArray[0][0] = abcArray[0][0];
-// 			bcArray[0][1] = abcArray[0][1];
-// 			bcArray[1][0] = abcArray[2][0];
-// 			bcArray[1][1] = abcArray[2][1];
-// 			break;
-// 		}
-// 		case (2): {
-// 			printf("case 2\n");
-// 			bcArray[0][0] = abcArray[0][0];
-// 			bcArray[0][1] = abcArray[0][1];
-// 			bcArray[1][0] = abcArray[1][0];
-// 			bcArray[1][1] = abcArray[1][1];
-// 			break;
-// 		}
-// 	}
-
-// 	printf("bcArray: \n");
-// 	int k;
-// 	for (k = 0; k < 2; k++) {
-// 		printf("(%f, %f)\n", bcArray[k][0],bcArray[k][1]);
-// 	}
-
-// 	if (bcArray[0][0] > bcArray[1][0]) { // compare horizontal positions 
-// 		if (bcArray[0][1] <= bcArray[1][1]) { // compare vertical positions
-// 			printf("1\n");
-// 			bb0 = bcArray[0][0];
-// 			bb1 = bcArray[0][1];
-// 			cc0 = bcArray[1][0];
-// 			cc1 = bcArray[1][1];
-// 		} else {
-// 			printf("2\n");
-// 			bb0 = bcArray[1][0];
-// 			bb1 = bcArray[1][1];
-// 			cc0 = bcArray[0][0];
-// 			cc1 = bcArray[0][1];
-// 		} 
-// 	} else {
-// 		if (bcArray[0][1] >= bcArray[1][1]) {
-// 			printf("3\n");
-// 			bb0 = bcArray[1][0];
-// 			bb1 = bcArray[1][1];
-// 			cc0 = bcArray[0][0];
-// 			cc1 = bcArray[0][1];
-// 		} else {
-// 			printf("4\n");
-// 			bb0 = bcArray[0][0];
-// 			bb1 = bcArray[0][1];
-// 			cc0 = bcArray[1][0];
-// 			cc1 = bcArray[1][1];
-// 		}
-// 	}
-// 	printf("aa: (%f, %f)\n", aa0, aa1);
-// 	printf("bb: (%f, %f)\n", bb0, bb1);
-// 	printf("cc: (%f, %f)\n", cc0, cc1);
-   
-
-// 	int x0, x1, x1low, x1high;
-// 	// special case handling for vertical line
-// 	if ((aa0 == bb0) && (bb0 == cc0)) {
-// 		x0 = aa0;
-// 		for (x1 = ceil(aa1); x1 <= floor(cc1); x1++) {
-// 			pixSetRGB(x0, x1, r, g, b);
-// 		}
-// 	}
-// 	// base of the triangle is the bottom-most edge
-// 	else if ((bb0 > cc0) || (aa0 == cc0) || (bb0 == cc0)) {
-// 		for (x0 = ceil(aa0); x0 <= floor(cc0); x0++) {
-// 			x1low = aa1 + ((bb1 - aa1) / (bb0 - aa0)) * (x0 - aa0);
-// 			x1high = aa1 + ((cc1 - aa1) / (cc0 - aa0)) * (x0 - aa0);
-// 			for (x1 = ceil(x1low); x1 <= floor(x1high); x1++) {
-// 				pixSetRGB(x0, x1, r, g, b);
-// 			}
-// 		}
-// 		for (x0 = ceil(cc0); x0 <= floor(bb0); x0++) {
-// 			x1low = aa1 + ((bb1 - aa1) / (bb0 - aa0)) * (x0 - aa0);
-// 			x1high = cc1 + ((bb1 - cc1) / (bb0 - cc0)) * (x0 - cc0);
-// 			for (x1 = ceil(x1low); x1<= floor(x1high); x1++) {
-// 				pixSetRGB(x0, x1, r, g, b);
-// 			} 
-// 		}
-// 	// base of the triangle is the top-most edge
-// 	} else {
-// 		printf("else\n");
-// 		for (x0 = ceil(aa0); x0 <= floor(bb0); x0++) {
-// 			// printf("else: first for loop\n");
-// 			x1low = aa1 + ((bb1 - aa1) / (bb0 - aa0)) * (x0 - aa0);
-// 			x1high = aa1 + ((cc1 - aa1) / (cc0 - aa0)) * (x0 - aa0);
-// 			printf("x1low: %f, x1high: %f \n", x1low, x1high);
-// 			if ((ceil(aa0) == floor(cc0))) {
-// 				printf("breaks\n");
-// 				break;
-// 			} else {
-// 				for (x1 = ceil(x1low); x1 <= floor(x1high); x1++) {
-// 					// printf("else: inner for loop\n");
-// 					pixSetRGB(x0, x1, r, g, b);
-// 				}
-// 			}
-// 		}
-// 		printf("else: exits first for loop\n");
-// 		for (x0 = ceil(bb0); x0 <= floor(cc0); x0++) {
-// 			// printf("else: second for loop\n")	;
-// 			x1low = bb1 + ((cc1 - bb1) / (cc0 - bb0)) * (x0 - bb0);
-// 			x1high = aa1 + ((cc1 - aa1) / (cc0 - aa0)) * (x0 - aa0);
-// 			for (x1 = ceil(x1low); x1 <= floor(x1high); x1++) {
-// 				pixSetRGB(x0, x1, r, g, b);
-// 			}
-// 		}
-// 	}
-// }
