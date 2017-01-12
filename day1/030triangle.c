@@ -7,10 +7,17 @@
 
 // TODO: figure out import stuff
 // TODO: use more vector + matrix operations
-#include <stdio.h>
-#include <stdbool.h>
-#include <math.h>
-#include "000pixel.h"
+// #include <stdio.h>
+// #include <stdbool.h>
+// #include <math.h>
+// #include "000pixel.h"
+
+void calculateNewPQ(double leftMatrix[2][2], double xMinusA[2], double pq[2]);
+void calculateNewRGB(double alpha[3], double beta[3], double gamma[3], 
+	double pq[2], double newRGB[3]);
+void triRender(double a[2], double b[2], double c[2], double rgb[3], 
+	double alpha[3], double beta[3], double gamma[3]);
+
 
 /* to calculate p and q, take in the inverted left matrix and the x - a column matrix.
    return result in a vector of size 2 where pq[0] = p  and pq[1] = q*/

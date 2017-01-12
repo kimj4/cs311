@@ -2,16 +2,17 @@
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * homework for day 3, added functionality for interpolation.
+ * homework for day 4, added functionality for interpolation.
  */
 
 
 
 #include "000pixel.h"
-#ifndef 040vector_c
-#include "030vector.c"
+// #include "030vector.c"
 // #include "030matrix.c"
-// #include "030triangle.c"
+// #include "040triangle.c"
+// #include "040texture.c"
+#include "stb_image.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
@@ -29,7 +30,7 @@ int main(void) {
 		double alpha[3] = {1.0, 0.0, 0.0};
 		double beta[3] = {0.0, 1.0, 0.0};
 		double gamma[3] = {0.0, 0.0, 1.0};
-		triRender(a, b, c, rgb, alpha, beta, gamma);
+		// triRender(a, b, c, rgb, alpha, beta, gamma);
 
 		pixRun();	
 		return 0;	
