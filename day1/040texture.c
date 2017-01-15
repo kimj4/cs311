@@ -1,6 +1,3 @@
-
-
-
 /*** Public: For header file ***/
 
 /* These are constants, that are used to configure how the texture behaves. */
@@ -191,9 +188,25 @@ void texSample(texTexture *tex, double s, double t) {
 	v = t * (tex->height - 1.0);
 	int i;
 	if (tex->filtering == texQUADRATIC) {
-		/* Replace this nearest-neighbor filtering with quadratic!! */
+		double uf = u - floor(u);
+		double vf = v - floor(v);
+
+		texGetTexel(tex, ceil(u), ceil(v), tex->aux);
+		vecScale(tex->texelDim, uf * vf, tex->aux, tex->sample);
+
+		texGetTexel(tex, ceil(u), floor(v), tex->aux);
+		vecScale(tex->texelDim, uf * (1 - vf), tex->aux, tex->aux);
+		vecAdd(tex->texelDim, tex->aux, tex->sample, tex->sample);
+
+		texGetTexel(tex, floor(u), ceil(v), tex->aux);
+		vecScale(tex->texelDim, (1 - uf) * vf, tex->aux, tex->aux);
+		vecAdd(tex->texelDim, tex->aux, tex->sample, tex->sample);
+
+		texGetTexel(tex, floor(u), floor(v), tex->aux);
+		vecScale(tex->texelDim, (1 - uf) * (1 - vf), tex->aux, tex->aux);
+		vecAdd(tex->texelDim, tex->aux, tex->sample, tex->sample);
+	} else {
 		texGetTexel(tex, (int)round(u), (int)round(v), tex->sample);
-	} else
-		texGetTexel(tex, (int)round(u), (int)round(v), tex->sample);
+	}
 }
 

@@ -11,7 +11,7 @@
 void vecCopy(int dim, double v[], double copy[]) {
   int i;
   for (i = 0; i < dim; i++) {
-    copy[i] = copy[i];
+    copy[i] = v[i];
   }
 }
 

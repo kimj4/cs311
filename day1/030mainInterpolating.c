@@ -5,16 +5,13 @@
  * homework for day 3, added functionality for interpolation.
  */
 
-
-
-#include "000pixel.h"
-#ifndef 040vector_c
-#include "030vector.c"
-// #include "030matrix.c"
-// #include "030triangle.c"
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
+// #include "030triangle.c"
+#include "000pixel.h"
+// #include "030matrix.c"
+
 
 int main(void) {
 	if (pixInitialize(512, 512, "Pixel Graphics") != 0)
