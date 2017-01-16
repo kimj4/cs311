@@ -16,6 +16,8 @@
 #define renTEXG 1
 #define renTEXB 2
 
+#include "050triangle.c"
+
 /* Sets rgb, based on the other parameters, which are unaltered. attr is an 
 interpolated attribute vector. */
 void colorPixel(renRenderer *ren, double unif[], texTexture *tex[], 
@@ -26,5 +28,5 @@ void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
     rgb[2] = tex[0]->sample[renTEXB] * unif[renUNIFB] * attr[renATTRB];
 }
 
-#include "050triangle.c"
+
 
