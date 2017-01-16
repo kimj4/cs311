@@ -1,0 +1,1 @@
+clang 060mainEffect.c 000pixel.o -lglfw -framework OpenGL

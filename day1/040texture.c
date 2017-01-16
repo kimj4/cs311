@@ -166,9 +166,9 @@ texture coordinates [0, 1] x [0, 1]. Assumes that the texture has already been
 initialized. The result is placed in tex->sample for reading by the user. */
 void texSample(texTexture *tex, double s, double t) {
 	/* Handle clamping vs. repeating. */
-	if (tex->leftRight == texREPEAT)
+	if (tex->leftRight == texREPEAT) {
 		s = s - floor(s);
-	else {
+	} else {
 		if (s < 0.0)
 			s = 0.0;
 		else if (s > 1.0)
