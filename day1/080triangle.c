@@ -2,8 +2,8 @@
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * homework for day 5. Abstraction
- * extensive refactoring also done
+ * modified to never have to process an vary vector
+ *
  */
 
 #include <stdio.h>
@@ -11,18 +11,18 @@
 
 /* forward declaration for function in main*/
 void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
-        double attr[], double rgb[]);
+        double vary[], double rgb[]);
 
-/* calculates attr which contains interpolated values */
-void calculateAttr(double alpha[], double beta[], double gamma[], double pq[], double attr[], int attrDim) {
-	double betaMinusAlpha[attrDim], gammaMinusAlpha[attrDim], pBetaMinusAlpha[attrDim],
-		  qGammaMinusAlpha[attrDim], subSum[attrDim], chi[attrDim];
-	vecSubtract(attrDim, beta, alpha, betaMinusAlpha);
-	vecSubtract(attrDim, gamma, alpha, gammaMinusAlpha);
-	vecScale(attrDim, pq[0], betaMinusAlpha, pBetaMinusAlpha);
-	vecScale(attrDim, pq[1], gammaMinusAlpha, qGammaMinusAlpha);
-	vecAdd(attrDim, pBetaMinusAlpha, qGammaMinusAlpha, subSum);
-	vecAdd(attrDim, subSum, alpha, attr);
+/* calculates vary which contains interpolated values */
+void calculateVary(double alpha[], double beta[], double gamma[], double pq[], double vary[], int varyDim) {
+	double betaMinusAlpha[varyDim], gammaMinusAlpha[varyDim], pBetaMinusAlpha[varyDim],
+		  qGammaMinusAlpha[varyDim], subSum[varyDim], chi[varyDim];
+	vecSubtract(varyDim, beta, alpha, betaMinusAlpha);
+	vecSubtract(varyDim, gamma, alpha, gammaMinusAlpha);
+	vecScale(varyDim, pq[0], betaMinusAlpha, pBetaMinusAlpha);
+	vecScale(varyDim, pq[1], gammaMinusAlpha, qGammaMinusAlpha);
+	vecAdd(varyDim, pBetaMinusAlpha, qGammaMinusAlpha, subSum);
+	vecAdd(varyDim, subSum, alpha, vary);
 }
 
 /* to calculate p and q, take in the inverted left matrix and the x - a column matrix.
@@ -92,11 +92,11 @@ void findInverseMatrixMultiplier(double aa[], double bb[], double cc[], double r
    that color. */
 void interpolateAndSet(renRenderer *ren, double unif[], texTexture *tex[], double x[],
 	double aa[], double bb[], double cc[], double pq[], double invLeftMatrix[2][2]) {
-	double xMinusA[2], newRGB[3], attr[ren->attrDim];
+	double xMinusA[renVARYDIMBOUND], newRGB[3], vary[renVARYDIMBOUND];
 	vecSubtract(2, x, aa, xMinusA);
 	calculatePQ(invLeftMatrix, xMinusA, pq);
-	calculateAttr(aa, bb, cc, pq, attr, ren->attrDim);
-	colorPixel(ren, unif, tex, attr, newRGB);
+	calculateVary(aa, bb, cc, pq, vary, ren->varyDim);
+	colorPixel(ren, unif, tex, vary, newRGB);
   // printf("interpolateAndSet: (x[0], x[1], newRGB[0], newRGB[1], newRGB[2]): (%f, %f, %f, %f, %f)\n", x[0], x[1], newRGB[0], newRGB[1], newRGB[2]);
 	pixSetRGB(x[0], x[1], newRGB[0], newRGB[1], newRGB[2]);
 }
@@ -111,7 +111,6 @@ double calcSlopePoint(double x[], double final[], double initial[]) {
 // first two elements of a, b, c are coordinates (in screen space)
 void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double a[], double b[], double c[]) {
-
 	// rearrange givens
 	double *posArray[3] = {a, b, c};
 	int aaPos, bbPos, ccPos;
@@ -120,11 +119,6 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double *aa = posArray[aaPos];
 	double *bb = posArray[bbPos];
 	double *cc = posArray[ccPos];
-  // printf("a: (%f, %f)\n", a[0], a[1]);
-  // printf("b: (%f, %f)\n", b[0], b[1]);
-  // printf("c: (%f, %f)\n", c[0], c[1]);
-  // printf("aa: (%f, %f)\n", aa[0], aa[1]);
-  // printf("bb: (%f, %f)\n", bb[0], bb[1]);
 
 	// calculate constants
 	double invLeftMatrix[2][2];
@@ -156,33 +150,6 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 				interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
 			}
 		}
-	// base of the triangle is the top-most edge
-	// } else {
-	// 	for (x[0] = ceil(aa[0]); x[0] <= floor(bb[0]); x[0]++) {
-  //     // if (ceil(aa[0]) == floor(bb[0])) {
-  //     //   printf("ceil(aa[0]) == floor(bb[0])\n");
-  //     // }
-	// 		x1low = calcSlopePoint(x, bb, aa);
-	// 		x1high = calcSlopePoint(x, cc, aa);
-	// 		if ((ceil(aa[0]) == floor(cc[0]))) {
-	// 			break;
-	// 		} else {
-	// 			for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
-	// 				interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
-	// 			}
-	// 		}
-	// 	}
-	// 	for (x[0] = ceil(bb[0]); x[0] <= floor(cc[0]); x[0]++) {
-  //     // if (ceil(bb[0]) == floor(cc[0])) {
-  //     //   printf("ceil(bb[0]) == floor(cc[0])\n");
-  //     // }
-	// 		x1low = calcSlopePoint(x, cc, bb);
-	// 		x1high = calcSlopePoint(x, cc, aa);
-	// 		for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
-	// 			interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
-	// 		}
-	// 	}
-	// }
 } else {
   for (x[0] = ceil(aa[0]); x[0] <= floor(bb[0]); x[0]++) {
     // if (ceil(aa[0]) == floor(bb[0])) {

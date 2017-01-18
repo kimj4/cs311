@@ -1,1 +1,0 @@
-clang 050mainAbstracted.c 000pixel.o -lglfw -framework OpenGL
