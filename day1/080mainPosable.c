@@ -29,14 +29,14 @@
 #include "040texture.c"
 #include "080renderer.c"
 #include "080triangle.c"
-#include "070mesh.c"
+#include "080mesh.c"
 #include <stdarg.h>
 #include <stdio.h>
 
 double unif[3];
 renRenderer ren;
-int width = 1024;
-int height = 1024;
+int width = 512;
+int height = 512;
 meshMesh mesh;
 
 texTexture *tex[];
@@ -45,6 +45,10 @@ texTexture *tex[];
 interpolated attribute vector. */
 void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
                 double vary[], double rgb[]) {
+  // printf("vary: (%f, %f)\n", vary[renVARYS], vary[renVARYT]);
+
+
+
   texSample(tex[0], vary[renVARYS], vary[renVARYT]);
   rgb[0] = tex[0]->sample[renTEXR];
   rgb[1] = tex[0]->sample[renTEXG];
@@ -101,11 +105,11 @@ int main() {
 
   double x,y,rx,ry;
   int sideNum;
-  x = 512;
-  y = 512;
-  rx = 500;
-  ry = 500;
-  sideNum = 13;
+  x = 256;
+  y = 256;
+  rx = 100;
+  ry = 100;
+  sideNum = 100;
   meshInitializeEllipse(&mesh, x, y, rx, ry, sideNum);
 
   pixSetTimeStepHandler(handleTimeStep);

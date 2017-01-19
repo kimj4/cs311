@@ -1,5 +1,8 @@
 double *varyVerts[renVARYDIMBOUND * renVERTNUMBOUND];
 
+void transformVertex(renRenderer *ren, double unif[], double attr[],
+        double vary[]);
+
 /*** Creating and destroying ***/
 
 /* Feel free to read the struct's members, but don't write them, except through
@@ -79,14 +82,25 @@ void meshRender(meshMesh *mesh, renRenderer *ren, double unif[],
     printf("mesh attrDim: %i, ren attrDim: %i\n", mesh->attrDim, ren->attrDim);
     return;
   } else {
-    int i, *curTri;
+    int i, j, *curTri;
+    for (j = 0; j < mesh->vertNum; j++) { // iterate through all vertices
+      double tempVaryVert[renVARYDIMBOUND];
+      transformVertex(ren, unif, meshGetVertexPointer(mesh, j), tempVaryVert);
+      int k;
+      for (k = 0; k < mesh->attrDim; k++) {
+        varyVerts[(mesh->attrDim * j)  + k] = &tempVaryVert[k];
+      }
+    }
+
     for (i = 0; i < mesh->triNum; i++) {
+      printf("triangle iteration loop top\n");
       curTri = meshGetTrianglePointer(mesh, i);
-      // do transformations on all verticies, store in varyVerts
-      transformVertex
+      printf("a\n");
       triRender(ren, unif, tex, meshGetVertexPointer(mesh, curTri[0]),
                 meshGetVertexPointer(mesh, curTri[1]),
                 meshGetVertexPointer(mesh, curTri[2]));
+      printf("b\n");
+
     }
   }
 }

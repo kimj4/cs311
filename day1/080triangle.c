@@ -65,15 +65,13 @@ void setbbPosAndccPos(double *posArray[3], int *aaPos, int *bbPos, int *ccPos) {
 			}
 		}
 	}
-	// using tangent theta identity to determine which has a smaller angle from the
-	//  horizontal axis
-	if ((posArray[t1][1] / posArray[t1][0]) < (posArray[t2][1] / posArray[t2][0])) {
-		*bbPos = t1;
-		*ccPos = t2;
-	} else {
-		*bbPos = t2;
-		*ccPos = t1;
-	}
+  if (posArray[t1][1] < posArray[t2][1]) {
+    *bbPos = t1;
+  	*ccPos = t2;
+  } else {
+    *bbPos = t2;
+  	*ccPos = t1;
+  }
 }
 
 /* function to find the contant matrix in the interpolation function*/
@@ -111,6 +109,12 @@ double calcSlopePoint(double x[], double final[], double initial[]) {
 // first two elements of a, b, c are coordinates (in screen space)
 void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double a[], double b[], double c[]) {
+
+  // printf("a: (%f, %f)\n", a[0], a[1]);
+  // printf("b: (%f, %f)\n", b[0], b[1]);
+  // printf("c: (%f, %f)\n", c[0], c[1]);
+
+
 	// rearrange givens
 	double *posArray[3] = {a, b, c};
 	int aaPos, bbPos, ccPos;
@@ -119,6 +123,9 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double *aa = posArray[aaPos];
 	double *bb = posArray[bbPos];
 	double *cc = posArray[ccPos];
+  // printf("aa: (%f, %f)\n", aa[0], aa[1]);
+  // printf("bb: (%f, %f)\n", bb[0], bb[1]);
+  // printf("cc: (%f, %f)\n", cc[0], cc[1]);
 
 	// calculate constants
 	double invLeftMatrix[2][2];
@@ -128,6 +135,7 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double x1low, x1high, x[2], pq[2];
 	// special case handling for vertical line
 	if ((aa[0] == bb[0]) && (bb[0] == cc[0])) {
+    // printf("stright line\n");
 		x[0] = aa[0];
 		for (x[1] = ceil(aa[1]); x[1] <= floor(cc[1]); x[1]++) {
 			interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
@@ -135,6 +143,8 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	}
 	// base of the triangle is the bottom-most edge
 	else if ((bb[0] > cc[0]) || (aa[0] == cc[0]) || (bb[0] == cc[0])) {
+    // printf("else if\n");
+    // printf("bb[0] > cc[0]: %i\n", bb[0] > cc[0]);
 		for (x[0] = ceil(aa[0]); x[0] <= floor(cc[0]); x[0]++) {
 			x1low = calcSlopePoint(x, bb, aa);
 			x1high = calcSlopePoint(x, cc, aa);
@@ -151,7 +161,9 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 			}
 		}
 } else {
+  // printf("else\n");
   for (x[0] = ceil(aa[0]); x[0] <= floor(bb[0]); x[0]++) {
+
     // if (ceil(aa[0]) == floor(bb[0])) {
     //   printf("ceil(aa[0]) == floor(bb[0])\n");
     // }
@@ -159,7 +171,7 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
     x1high = calcSlopePoint(x, cc, aa);
     if ((ceil(aa[0]) == floor(cc[0]))) {
       // break;
-      printf("aaaa\n");
+      // printf("aaaa\n");
     } else {
       for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
         interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
