@@ -10,8 +10,8 @@
 #include <math.h>
 
 /* forward declaration for function in main*/
-void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
-        double vary[], double rgb[]);
+// void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
+//         double vary[], double rgb[]);
 
 /* calculates vary which contains interpolated values */
 void calculateVary(double alpha[], double beta[], double gamma[], double pq[], double vary[], int varyDim) {
@@ -94,7 +94,7 @@ void interpolateAndSet(renRenderer *ren, double unif[], texTexture *tex[], doubl
 	vecSubtract(2, x, aa, xMinusA);
 	calculatePQ(invLeftMatrix, xMinusA, pq);
 	calculateVary(aa, bb, cc, pq, vary, ren->varyDim);
-	colorPixel(ren, unif, tex, vary, newRGB);
+	ren->colorPixel(ren, unif, tex, vary, newRGB);
   // printf("interpolateAndSet: (x[0], x[1], newRGB[0], newRGB[1], newRGB[2]): (%f, %f, %f, %f, %f)\n", x[0], x[1], newRGB[0], newRGB[1], newRGB[2]);
 	pixSetRGB(x[0], x[1], newRGB[0], newRGB[1], newRGB[2]);
 }
@@ -113,7 +113,6 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
   // printf("a: (%f, %f)\n", a[0], a[1]);
   // printf("b: (%f, %f)\n", b[0], b[1]);
   // printf("c: (%f, %f)\n", c[0], c[1]);
-
 
 	// rearrange givens
 	double *posArray[3] = {a, b, c};
@@ -135,7 +134,7 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double x1low, x1high, x[2], pq[2];
 	// special case handling for vertical line
 	if ((aa[0] == bb[0]) && (bb[0] == cc[0])) {
-    printf("stright line\n");
+    // printf("stright line\n");
 		x[0] = aa[0];
 		for (x[1] = ceil(aa[1]); x[1] <= floor(cc[1]); x[1]++) {
 			interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
@@ -177,7 +176,10 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
         interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
       }
     }
+		// printf("%f, %f\n", ceil(aa[0]), floor(cc[0]));
+		// printf("triRender else: first inner for loop finishes\n");
   }
+	// printf("triRender else: first for loop finishes\n");
   for (x[0] = ceil(bb[0]); x[0] <= floor(cc[0]); x[0]++) {
     // if (ceil(bb[0]) == floor(cc[0])) {
     //   printf("ceil(bb[0]) == floor(cc[0])\n");
@@ -187,6 +189,9 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
     for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
       interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
     }
+		// printf("inner for loop finishes\n");
   }
+	// printf("triRender else: second for loop finishes\n");
 }
+// printf("triRender: bottom\n");
 }

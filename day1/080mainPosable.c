@@ -1,5 +1,5 @@
 #define renVARYDIMBOUND 16
-#define renVERTNUMBOUND 16
+#define renVERTNUMBOUND 1000
 #define renATTRX 0
 #define renATTRY 1
 #define renATTRS 2
@@ -15,13 +15,21 @@
 #define renVARYR 4
 #define renVARYG 5
 #define renVARYB 6
+
+#define renUNIFDIM 6
 #define renUNIFR 0
 #define renUNIFG 1
 #define renUNIFB 2
+#define renUNIFXTRANS 3
+#define renUNIFYTRANS 4
+#define renUNIFROT 5
+
 
 #define renTEXR 0
 #define renTEXG 1
 #define renTEXB 2
+
+
 
 #include "000pixel.h"
 #include "070vector.c"
@@ -33,7 +41,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-double unif[3];
+double unif[renUNIFDIM];
 renRenderer ren;
 int width = 512;
 int height = 512;
@@ -45,10 +53,6 @@ texTexture *tex[];
 interpolated attribute vector. */
 void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
                 double vary[], double rgb[]) {
-  // printf("vary: (%f, %f)\n", vary[renVARYS], vary[renVARYT]);
-
-
-
   texSample(tex[0], vary[renVARYS], vary[renVARYT]);
   rgb[0] = tex[0]->sample[renTEXR];
   rgb[1] = tex[0]->sample[renTEXG];
@@ -59,8 +63,8 @@ void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
 void transformVertex(renRenderer *ren, double unif[], double attr[],
         double vary[]) {
     /* For now, just copy attr to varying. Baby steps. */
-    vary[renVARYX] = attr[renATTRX];
-    vary[renVARYY] = attr[renATTRY];
+    vary[renATTRX] = cos(unif[renUNIFROT]) * attr[renATTRX] - sin(unif[renUNIFROT]) * attr[renATTRY] + unif[renUNIFXTRANS];
+    vary[renATTRY] = sin(unif[renUNIFROT]) * attr[renATTRX] + cos(unif[renUNIFROT]) * attr[renATTRY] + unif[renUNIFYTRANS];
     vary[renVARYS] = attr[renATTRS];
     vary[renVARYT] = attr[renATTRT];
 }
@@ -71,9 +75,7 @@ void handleTimeStep(double oldTime, double newTime) {
     printf("handleTimeStep: %f frames/sec\n", 1.0 / (newTime - oldTime));
   }
   pixClearRGB(0, 0, 0);
-  unif[0] = 1;
-  unif[1] = 1;
-  unif[2] = 1;
+  unif[renUNIFROT] += .05;
   meshRender(&mesh, &ren, unif, tex);
 }
 
@@ -82,37 +84,32 @@ int main() {
     return 1;
   } else {
     pixClearRGB(0, 0, 0);
+    // set number of information stored
+    ren.attrDim = 4;
+    ren.texNum = 1;
+    ren.unifDim = 3;
+    ren.varyDim = 4;
 
+    // set textures
+    texTexture tex1;
+    char *path1 = "cat1.jpg";
+    texInitializeFile(&tex1, path1);
+    texSetFiltering(&tex1, texQUADRATIC);
+    texSetTopBottom(&tex1, texREPEAT);
+    texSetLeftRight(&tex1, texREPEAT);
+    tex[0] = &tex1;
 
-  pixClearRGB(0, 0, 0);
+    unif[renUNIFXTRANS] = 256;
+    unif[renUNIFYTRANS] = 256;
+    unif[renUNIFROT] = 0;
 
-  // set number of information stored
-  ren.attrDim = 4;
-  ren.texNum = 1;
-  ren.unifDim = 3;
-  ren.varyDim = 4;
-
-
-  // set textures
-  texTexture tex1;
-  char *path1 = "cat1.jpg";
-  texInitializeFile(&tex1, path1);
-  texSetFiltering(&tex1, texQUADRATIC);
-  texSetTopBottom(&tex1, texREPEAT);
-  texSetLeftRight(&tex1, texREPEAT);
-  tex[0] = &tex1;
-
-
-  double x,y,rx,ry;
-  int sideNum;
-  x = 256;
-  y = 256;
-  rx = 100;
-  ry = 100;
-  sideNum = 100;
-  meshInitializeEllipse(&mesh, x, y, rx, ry, sideNum);
-
-  pixSetTimeStepHandler(handleTimeStep);
-  pixRun();
+    double x = 0;
+    double y = 0;
+    double rx = 100;
+    double ry = 200;
+    int sideNum = 100;
+    meshInitializeEllipse(&mesh, x, y, rx, ry, sideNum);
+    pixSetTimeStepHandler(handleTimeStep);
+    pixRun();
   }
  }

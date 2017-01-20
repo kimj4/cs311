@@ -1,7 +1,7 @@
 double varyVerts[renVARYDIMBOUND * renVERTNUMBOUND];
 
-void transformVertex(renRenderer *ren, double unif[], double attr[],
-        double vary[]);
+// void transformVertex(renRenderer *ren, double unif[], double attr[],
+//         double vary[]);
 
 /*** Creating and destroying ***/
 
@@ -92,7 +92,7 @@ void meshRender(meshMesh *mesh, renRenderer *ren, double unif[],
     int j;
     for (j = 0; j < mesh->vertNum; j++) { // iterate through all vertices
       double tempVaryVert[renVARYDIMBOUND];
-      transformVertex(ren, unif, meshGetVertexPointer(mesh, j), tempVaryVert);
+      ren->transformVertex(ren, unif, meshGetVertexPointer(mesh, j), tempVaryVert);
       int k;
       for (k = 0; k < mesh->attrDim; k++) {
         varyVerts[(mesh->attrDim * j)  + k] = tempVaryVert[k];
@@ -101,7 +101,6 @@ void meshRender(meshMesh *mesh, renRenderer *ren, double unif[],
     int i, *curTri;
     for (i = 0; i < mesh->triNum; i++) {
       curTri = meshGetTrianglePointer(mesh, i);
-      // printf("curTri: (%d, %d, %d)\n", curTri[0], curTri[1], curTri[2]);
       triRender(ren, unif, tex, meshGetVaryVertexPointer(mesh, curTri[0]),
                                 meshGetVaryVertexPointer(mesh, curTri[1]),
                                 meshGetVaryVertexPointer(mesh, curTri[2]));
