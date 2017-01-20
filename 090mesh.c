@@ -1,7 +1,5 @@
+// vector to hold all information about vectors once they have been transformed
 double varyVerts[renVARYDIMBOUND * renVERTNUMBOUND];
-
-// void transformVertex(renRenderer *ren, double unif[], double attr[],
-//         double vary[]);
 
 /*** Creating and destroying ***/
 
@@ -66,7 +64,7 @@ double *meshGetVertexPointer(meshMesh *mesh, int vert) {
   else
     return NULL;
 }
-
+/* does what meshGetVertexPointer does except it uses varyVerts*/
 double *meshGetVaryVertexPointer(meshMesh *mesh, int vert) {
   if (0 <= vert && vert < mesh->vertNum)
     return &varyVerts[vert * mesh->attrDim];
@@ -90,7 +88,8 @@ void meshRender(meshMesh *mesh, renRenderer *ren, double unif[],
     return;
   } else {
     int j;
-    for (j = 0; j < mesh->vertNum; j++) { // iterate through all vertices
+    // transform all vertices
+    for (j = 0; j < mesh->vertNum; j++) {
       double tempVaryVert[renVARYDIMBOUND];
       ren->transformVertex(ren, unif, meshGetVertexPointer(mesh, j), tempVaryVert);
       int k;
@@ -99,6 +98,7 @@ void meshRender(meshMesh *mesh, renRenderer *ren, double unif[],
       }
     }
     int i, *curTri;
+    // render all triangles
     for (i = 0; i < mesh->triNum; i++) {
       curTri = meshGetTrianglePointer(mesh, i);
       triRender(ren, unif, tex, meshGetVaryVertexPointer(mesh, curTri[0]),

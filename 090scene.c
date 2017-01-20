@@ -1,4 +1,11 @@
-
+/*
+ * 090scene.c
+ * meshRender(...) implemented by Ju Yun Kim
+ * Carleton College
+ * CS 311
+ * contains the backbone to allow rendering of multiple meshes in an
+ * organized manner
+*/
 
 
 /* Feel free to read from this struct's members, but don't write to them except
@@ -70,13 +77,6 @@ void sceneSetTexture(sceneNode *node, renRenderer *ren, int i, texTexture *tex)
 has no parent, then unifParent is NULL. Otherwise, unifParent is the parent
 node's uniform vector. */
 void sceneRender(sceneNode *node, renRenderer *ren, double *unifParent) {
-  // struct sceneNode {
-  // 	double *unif;
-  // 	texTexture **tex;
-  // 	meshMesh *mesh;
-  // 	sceneNode *firstChild, *nextSibling;
-  // };
-	// printf("%i\n", unifParent == NULL);
   // update uniform
   ren->updateUniform(ren, node->unif, unifParent);
 

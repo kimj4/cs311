@@ -3,6 +3,7 @@
  * Carleton College
  * CS 311
  * file containing various implementations of matrix operations
+ * 090: now with dim 3 matrix operations
  */
 
 #include <math.h>
@@ -45,6 +46,9 @@ void mat22Columns(double col0[2], double col1[2], double m[2][2]) {
 	m[1][1] = col1[1];
 }
 
+/*** 2 x 2 Matrices ***/
+
+/* Pretty-ish print for 3x3 matrices*/
 void mat33Print(double m[3][3]) {
   printf("%f  %f  %f  \n%f  %f  %f  \n%f  %f  %f  \n", m[0][0], m[0][1], m[0][2],
                                                        m[1][0], m[1][1], m[1][2],

@@ -1,3 +1,11 @@
+/*
+ * 090mainScene.c
+ * Ju Yun Kim
+ * Carleton College
+ * CS 311
+ * main program to test the addition of scene.c
+ */
+
 #define renVARYDIMBOUND 16
 #define renVERTNUMBOUND 1000
 
@@ -40,8 +48,6 @@
 #define renTEXG 1
 #define renTEXB 2
 
-
-
 #include "000pixel.h"
 #include "070vector.c"
 #include "090matrix.c"
@@ -55,8 +61,8 @@
 
 double unif[renUNIFDIM];
 renRenderer ren;
-int width = 512;
-int height = 512;
+int width = 1024;
+int height = 1024;
 // meshMesh mesh;
 
 texTexture *tex[];
@@ -72,14 +78,12 @@ NULL, but instead contains a rotation-translation P, then sets the uniform
 matrix to the matrix product P * M. */
 void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
     if (unifParent == NULL) {
-      printf("1\n");
         /* The nine uniforms for storing the matrix start at index
         renUNIFMAT00. So &unif[renUNIFMAT00] is an array containing those
         nine numbers. We use '(double(*)[3])' to cast it to a 3x3 matrix. */
         mat33Isometry(unif[renUNIFTHETA], unif[renUNIFTRANSX],
             unif[renUNIFTRANSY], (double(*)[3])(&unif[renUNIFMAT00]));
     } else {
-      printf("2\n");
         double m[3][3];
         mat33Isometry(unif[renUNIFTHETA], unif[renUNIFTRANSX],
             unif[renUNIFTRANSY], m);
@@ -92,31 +96,22 @@ void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
 interpolated attribute vector. */
 void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
                 double vary[], double rgb[]) {
-  // printf("colorPixel: top\n");
   texSample(tex[0], vary[renVARYS], vary[renVARYT]);
   rgb[0] = tex[0]->sample[renTEXR];
   rgb[1] = tex[0]->sample[renTEXG];
   rgb[2] = tex[0]->sample[renTEXB];
-  // printf("colorPixel: bottom\n");
 }
 
 /* Writes the vary vector, based on the other parameters. */
 void transformVertex(renRenderer *ren, double unif[], double attr[],
         double vary[]) {
-
-          // printf("transformVertex top\n");
     double temp[3];
     double expandedAttr[3] = {attr[renATTRX], attr[renATTRY], 1};
     mat331Multiply((double(*)[3])(&unif[renUNIFMAT00]), expandedAttr, temp);
-    // printf("temp: (%f, %f, %f)\n", temp[0], temp[1], temp[2]);
-    // printf("%f\n", vary[renATTRX]);
     vary[renATTRX] = temp[0];
     vary[renATTRY] = temp[1];
-    // vary[renATTRX] = cos(unif[renUNIFTHETA]) * attr[renATTRX] - sin(unif[renUNIFTHETA]) * attr[renATTRY] + unif[renUNIFTRANSX];
-    // vary[renATTRY] = sin(unif[renUNIFTHETA]) * attr[renATTRX] + cos(unif[renUNIFTHETA]) * attr[renATTRY] + unif[renUNIFTRANSY];
     vary[renVARYS] = attr[renATTRS];
     vary[renVARYT] = attr[renATTRT];
-    // printf("transformVertex bottom\n");
 }
 
 
@@ -125,10 +120,8 @@ void handleTimeStep(double oldTime, double newTime) {
     printf("handleTimeStep: %f frames/sec\n", 1.0 / (newTime - oldTime));
   }
   pixClearRGB(0, 0, 0);
-  // unif[renUNIFTHETA] += .05;
-  unif[renUNIFTRANSX] += 100;
-  // printf("%f\n", unif[renUNIFTRANSX]);
-  // meshRender(&mesh, &ren, unif, tex);
+  unif[renUNIFTHETA] += .05;
+  sceneSetUniform(&root, &ren, unif);
   sceneRender(&root, &ren, NULL);
 }
 
@@ -137,7 +130,8 @@ int main() {
     return 1;
   } else {
     pixClearRGB(0, 0, 0);
-    // set number of information stored
+
+    // initialize ren
     ren.attrDim = 4;
     ren.texNum = 1;
     ren.unifDim = renUNIFDIM;
@@ -146,7 +140,7 @@ int main() {
     ren.colorPixel = colorPixel;
     ren.updateUniform = updateUniform;
 
-    // set textures
+    // initialize textures`
     texTexture tex1;
     char *path1 = "cat1.jpg";
     texInitializeFile(&tex1, path1);
@@ -155,12 +149,12 @@ int main() {
     texSetLeftRight(&tex1, texREPEAT);
     tex[0] = &tex1;
 
-    unif[renUNIFTRANSX] = 80;
-    unif[renUNIFTRANSY] = 80;
+    // initialize top level unif
+    unif[renUNIFTRANSX] = 512;
+    unif[renUNIFTRANSY] = 512;
     unif[renUNIFTHETA] = 0;
 
-    ren.updateUniform(&ren, unif, NULL);
-
+    // initialize some meshes
     meshMesh mesh1;
     double x = 0;
     double y = 0;
@@ -169,15 +163,20 @@ int main() {
     int sideNum = 100;
     meshInitializeEllipse(&mesh1, x, y, rx, ry, sideNum);
 
-
-    // int sceneInitialize(sceneNode *node, renRenderer *ren, double unif[],
-    // 		texTexture **tex, meshMesh *mesh, sceneNode *firstChild,
-    // 		sceneNode *nextSibling)
-    // sceneNode node1;
-    sceneInitialize(&branch2, &ren, unif, &tex, &mesh1, NULL, NULL);
+    // initialize some nodes
+    sceneInitialize(&branch4, &ren, unif, &tex, &mesh1, NULL, NULL);
+    branch4.unif[renUNIFTRANSY] = 200;
+    branch4.unif[renUNIFTRANSX] = 100;
+    sceneInitialize(&branch3, &ren, unif, &tex, &mesh1, NULL, &branch4);
+    branch3.unif[renUNIFTRANSY] = 300;
+    branch3.unif[renUNIFTRANSX] = 100;
+    sceneInitialize(&branch2, &ren, unif, &tex, &mesh1, NULL, &branch3);
+    branch2.unif[renUNIFTRANSY] = 100;
+    branch2.unif[renUNIFTRANSX] = 100;
     sceneInitialize(&branch1, &ren, unif, &tex, &mesh1, &branch2, NULL);
+    branch1.unif[renUNIFTRANSY] = 100;
+    branch1.unif[renUNIFTRANSX] = 100;
     sceneInitialize(&root, &ren, unif, &tex, &mesh1, &branch1, NULL);
-
 
     pixSetTimeStepHandler(handleTimeStep);
     pixRun();

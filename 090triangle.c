@@ -1,17 +1,16 @@
 /*
+ * 090triangle.c
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * modified to never have to process an vary vector
- *
+ * 090: modified (mostly just variable names) to take vary vectors instead of
+ * attr vectors.
+ * Known Issue: some triangles will not render properly, and it is beacuse of
+ * some logical error in sorting the three vertices
  */
 
 #include <stdio.h>
 #include <math.h>
-
-/* forward declaration for function in main*/
-// void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
-//         double vary[], double rgb[]);
 
 /* calculates vary which contains interpolated values */
 void calculateVary(double alpha[], double beta[], double gamma[], double pq[], double vary[], int varyDim) {
@@ -110,10 +109,6 @@ double calcSlopePoint(double x[], double final[], double initial[]) {
 void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double a[], double b[], double c[]) {
 
-  // printf("a: (%f, %f)\n", a[0], a[1]);
-  // printf("b: (%f, %f)\n", b[0], b[1]);
-  // printf("c: (%f, %f)\n", c[0], c[1]);
-
 	// rearrange givens
 	double *posArray[3] = {a, b, c};
 	int aaPos, bbPos, ccPos;
@@ -122,9 +117,6 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double *aa = posArray[aaPos];
 	double *bb = posArray[bbPos];
 	double *cc = posArray[ccPos];
-  // printf("aa: (%f, %f)\n", aa[0], aa[1]);
-  // printf("bb: (%f, %f)\n", bb[0], bb[1]);
-  // printf("cc: (%f, %f)\n", cc[0], cc[1]);
 
 	// calculate constants
 	double invLeftMatrix[2][2];
@@ -134,7 +126,6 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double x1low, x1high, x[2], pq[2];
 	// special case handling for vertical line
 	if ((aa[0] == bb[0]) && (bb[0] == cc[0])) {
-    // printf("stright line\n");
 		x[0] = aa[0];
 		for (x[1] = ceil(aa[1]); x[1] <= floor(cc[1]); x[1]++) {
 			interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
@@ -142,8 +133,6 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	}
 	// base of the triangle is the bottom-most edge
 	else if ((bb[0] > cc[0]) || (aa[0] == cc[0]) || (bb[0] == cc[0])) {
-    // printf("else if\n");
-    // printf("bb[0] > cc[0]: %i\n", bb[0] > cc[0]);
 		for (x[0] = ceil(aa[0]); x[0] <= floor(cc[0]); x[0]++) {
 			x1low = calcSlopePoint(x, bb, aa);
 			x1high = calcSlopePoint(x, cc, aa);
@@ -154,44 +143,29 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 		for (x[0] = ceil(cc[0]); x[0] <= floor(bb[0]); x[0]++) {
 			x1low = calcSlopePoint(x, bb, aa);
 			x1high = calcSlopePoint(x, bb, cc);
-			// x1low = aa[1] + ((bb[1] - aa[1]) / s (bb[0] - cc[0])) * (x[0] - cc[0]);
 			for (x[1] = ceil(x1low); x[1]<= floor(x1high); x[1]++) {
 				interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
 			}
 		}
 } else {
-  // printf("else\n");
   for (x[0] = ceil(aa[0]); x[0] <= floor(bb[0]); x[0]++) {
-
-    // if (ceil(aa[0]) == floor(bb[0])) {
-    //   printf("ceil(aa[0]) == floor(bb[0])\n");
-    // }
     x1low = calcSlopePoint(x, bb, aa);
     x1high = calcSlopePoint(x, cc, aa);
     if ((ceil(aa[0]) == floor(cc[0]))) {
+			// todo: see if this case needs to be handled
       // break;
-      // printf("aaaa\n");
     } else {
       for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
         interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
       }
     }
-		// printf("%f, %f\n", ceil(aa[0]), floor(cc[0]));
-		// printf("triRender else: first inner for loop finishes\n");
   }
-	// printf("triRender else: first for loop finishes\n");
   for (x[0] = ceil(bb[0]); x[0] <= floor(cc[0]); x[0]++) {
-    // if (ceil(bb[0]) == floor(cc[0])) {
-    //   printf("ceil(bb[0]) == floor(cc[0])\n");
-    // }
     x1low = calcSlopePoint(x, cc, bb);
     x1high = calcSlopePoint(x, cc, aa);
     for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
       interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
     }
-		// printf("inner for loop finishes\n");
   }
-	// printf("triRender else: second for loop finishes\n");
 }
-// printf("triRender: bottom\n");
 }
