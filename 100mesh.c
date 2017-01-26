@@ -96,16 +96,21 @@ void meshRender(meshMesh *mesh, renRenderer *ren, double unif[],
 			mesh->attrDim, ren->attrDim);
 	} else {
 		int i, *tri;
-		for (i = 0; i < mesh->vertNum; i += 1)
+		for (i = 0; i < mesh->vertNum; i += 1) {
 			ren->transformVertex(ren, unif, meshGetVertexPointer(mesh, i),
 				meshGetTransformedVertexPointer(mesh, ren, i));
+		}
+		// printf("transformVertex finishes\n");
+
 		for (i = 0; i < mesh->triNum; i += 1) {
 			tri = meshGetTrianglePointer(mesh, i);
 			triRender(ren, unif, tex,
 				meshGetTransformedVertexPointer(mesh, ren, tri[0]),
 				meshGetTransformedVertexPointer(mesh, ren, tri[1]),
 				meshGetTransformedVertexPointer(mesh, ren, tri[2]));
+			// printf("a call of trirender finishes\n");
 		}
+		// printf("all 	triRender-s finish\n");
 	}
 }
 

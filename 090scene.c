@@ -66,6 +66,10 @@ void sceneSetUniform(sceneNode *node, renRenderer *ren, double unif[]) {
 		node->unif[i] = unif[i];
 }
 
+void sceneSetOneUniform(sceneNode *node, int i, double unif) {
+	node->unif[i] = unif;
+}
+
 /* Sets the node's ith texture to the given one. */
 void sceneSetTexture(sceneNode *node, renRenderer *ren, int i, texTexture *tex)
 {
@@ -79,9 +83,12 @@ node's uniform vector. */
 void sceneRender(sceneNode *node, renRenderer *ren, double *unifParent) {
   // update uniform
   ren->updateUniform(ren, node->unif, unifParent);
+	// printf("updateUniform finishes\n");
 
   //render node
   meshRender(node->mesh, ren, node->unif, node->tex);
+	// printf("meshrender finishes");
+
 
   //render siblings
   if (node->nextSibling != NULL) {

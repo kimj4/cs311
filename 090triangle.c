@@ -73,8 +73,9 @@ void setbbPosAndccPos(double *posArray[3], int *aaPos, int *bbPos, int *ccPos) {
   }
 }
 
-/* function to find the contant matrix in the interpolation function*/
-void findInverseMatrixMultiplier(double aa[], double bb[], double cc[], double result[2][2]) {
+/* function to find the contant matrix in the interpolation function
+   also returns the determinant of the matrix that was inverted*/
+int findInverseMatrixMultiplier(double aa[], double bb[], double cc[], double result[2][2]) {
 	double bMinusA[2];
 	vecSubtract(2, bb, aa, bMinusA);
 	double cMinusA[2];
@@ -82,7 +83,7 @@ void findInverseMatrixMultiplier(double aa[], double bb[], double cc[], double r
 	double leftMatrix[2][2];
 	mat22Columns(bMinusA, cMinusA, leftMatrix);
 	double invLeftMatrix[2][2];
-	mat22Invert(leftMatrix, result);
+	return mat22Invert(leftMatrix, result);
 }
 
 /* function to take all information necessary for interpolation. finds color and sets pixel to
@@ -109,6 +110,11 @@ double calcSlopePoint(double x[], double final[], double initial[]) {
 void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double a[], double b[], double c[]) {
 
+	// // cross product test
+	// double ac[3] = {a[0], a[1], 0};
+	// double bc[3] = {b[0], b[1] ,0};
+	// if vec3Cross
+
 	// rearrange givens
 	double *posArray[3] = {a, b, c};
 	int aaPos, bbPos, ccPos;
@@ -118,9 +124,15 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double *bb = posArray[bbPos];
 	double *cc = posArray[ccPos];
 
+
+
 	// calculate constants
 	double invLeftMatrix[2][2];
-	findInverseMatrixMultiplier(aa, bb, cc, invLeftMatrix);
+	if (findInverseMatrixMultiplier(aa, bb, cc, invLeftMatrix) < 0) {
+		printf("here!\n");
+		return;
+	} else {
+
 
 	// rasterize
 	double x1low, x1high, x[2], pq[2];
@@ -133,6 +145,8 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	}
 	// base of the triangle is the bottom-most edge
 	else if ((bb[0] > cc[0]) || (aa[0] == cc[0]) || (bb[0] == cc[0])) {
+		// printf("first else\n");
+		// printf("before first forloop\n");
 		for (x[0] = ceil(aa[0]); x[0] <= floor(cc[0]); x[0]++) {
 			x1low = calcSlopePoint(x, bb, aa);
 			x1high = calcSlopePoint(x, cc, aa);
@@ -140,6 +154,7 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 				interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
 			}
 		}
+		// printf("before first forloop\n");
 		for (x[0] = ceil(cc[0]); x[0] <= floor(bb[0]); x[0]++) {
 			x1low = calcSlopePoint(x, bb, aa);
 			x1high = calcSlopePoint(x, bb, cc);
@@ -147,7 +162,9 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 				interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
 			}
 		}
+		// printf("after second forloop\n");
 } else {
+	// printf("second else\n");
   for (x[0] = ceil(aa[0]); x[0] <= floor(bb[0]); x[0]++) {
     x1low = calcSlopePoint(x, bb, aa);
     x1high = calcSlopePoint(x, cc, aa);
@@ -160,6 +177,7 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
       }
     }
   }
+	// printf("after first forloop\n");
   for (x[0] = ceil(bb[0]); x[0] <= floor(cc[0]); x[0]++) {
     x1low = calcSlopePoint(x, cc, bb);
     x1high = calcSlopePoint(x, cc, aa);
@@ -167,5 +185,7 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
       interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
     }
   }
+	// printf("after second forloop\n");
+}
 }
 }

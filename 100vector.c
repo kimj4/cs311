@@ -104,20 +104,3 @@ void vec3Spherical(double rho, double phi, double theta, double v[3]) {
   v[1] = rho * sin(phi) * sin(theta);
   v[2] = rho * cos(phi);
 }
-
-/* Given a length-1 3D vector axis and an angle theta (in radians), builds the
-rotation matrix for the rotation about that axis through that angle. Based on
-Rodrigues' rotation formula R = I + (sin theta) U + (1 - cos theta) U^2. */
-void mat33AngleAxisRotation(double theta, double axis[3], double rot[3][3]) {
-  rot[0][0] = ;
-  rot[0][1] = ;
-  rot[0][2] = ;
-
-  rot[1][0] = ;
-  rot[1][1] = ;
-  rot[1][2] = ;
-
-  rot[2][0] = ;
-  rot[2][1] = ;
-  rot[2][2] = ;
-}
