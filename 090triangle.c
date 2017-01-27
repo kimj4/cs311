@@ -52,24 +52,18 @@ int findLeftmost(double *posArray[3]) {
 
 /* function to appropriately arrange the remaining two vertices after aa has been determined*/
 void setbbPosAndccPos(double *posArray[3], int *aaPos, int *bbPos, int *ccPos) {
-	int t1, t2, i;
-	int tempCount = 0;
-	for (i = 0; i < 3; i++) {
-		if (i != *aaPos) {
-			if (tempCount == 0) {
-				t1 = i;
-				tempCount++;
-			} else {
-				t2 = i;
-			}
-		}
-	}
-  if (posArray[t1][1] < posArray[t2][1]) {
-    *bbPos = t1;
-  	*ccPos = t2;
-  } else {
-    *bbPos = t2;
-  	*ccPos = t1;
+	if (*aaPos == 0) {
+    *aaPos = 0;
+    *bbPos = 1;
+    *ccPos = 2;
+  } else if (*aaPos == 1) {
+    *aaPos = 1;
+    *bbPos = 2;
+    *ccPos = 0;
+  } else if (*aaPos == 2) {
+    *aaPos = 2;
+    *bbPos = 0;
+    *ccPos = 1;
   }
 }
 
@@ -95,7 +89,7 @@ void interpolateAndSet(renRenderer *ren, double unif[], texTexture *tex[], doubl
 	calculatePQ(invLeftMatrix, xMinusA, pq);
 	calculateVary(aa, bb, cc, pq, vary, ren->varyDim);
 	ren->colorPixel(ren, unif, tex, vary, newRGB);
-  // printf("interpolateAndSet: (x[0], x[1], newRGB[0], newRGB[1], newRGB[2]): (%f, %f, %f, %f, %f)\n", x[0], x[1], newRGB[0], newRGB[1], newRGB[2]);
+  // printf("interpolateAndSet: (x[0], x[1]): (%f, %f)\n", x[0], x[1]);
 	pixSetRGB(x[0], x[1], newRGB[0], newRGB[1], newRGB[2]);
 }
 
@@ -110,12 +104,7 @@ double calcSlopePoint(double x[], double final[], double initial[]) {
 void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double a[], double b[], double c[]) {
 
-	// // cross product test
-	// double ac[3] = {a[0], a[1], 0};
-	// double bc[3] = {b[0], b[1] ,0};
-	// if vec3Cross
 
-	// rearrange givens
 	double *posArray[3] = {a, b, c};
 	int aaPos, bbPos, ccPos;
 	aaPos = findLeftmost(posArray);
@@ -124,68 +113,63 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double *bb = posArray[bbPos];
 	double *cc = posArray[ccPos];
 
-
-
 	// calculate constants
 	double invLeftMatrix[2][2];
 	if (findInverseMatrixMultiplier(aa, bb, cc, invLeftMatrix) < 0) {
-		printf("here!\n");
-		return;
+		return; // backface culling
 	} else {
-
-
-	// rasterize
-	double x1low, x1high, x[2], pq[2];
-	// special case handling for vertical line
-	if ((aa[0] == bb[0]) && (bb[0] == cc[0])) {
-		x[0] = aa[0];
-		for (x[1] = ceil(aa[1]); x[1] <= floor(cc[1]); x[1]++) {
-			interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+		// rasterize
+		double x1low, x1high, x[2], pq[2];
+		// special case handling for vertical line
+		if ((aa[0] == bb[0]) && (bb[0] == cc[0])) {
+			x[0] = aa[0];
+			for (x[1] = ceil(aa[1]); x[1] <= floor(cc[1]); x[1]++) {
+				interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+			}
+		}
+		// base of the triangle is the bottom-most edge
+		else if ((bb[0] > cc[0]) || (aa[0] == cc[0]) || (bb[0] == cc[0])) {
+			// printf("first else\n");
+			// printf("before first forloop\n");
+			for (x[0] = ceil(aa[0]); x[0] <= floor(cc[0]); x[0]++) {
+				x1low = calcSlopePoint(x, bb, aa);
+				x1high = calcSlopePoint(x, cc, aa);
+				for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
+					interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+				}
+			}
+			// printf("before first forloop\n");
+			for (x[0] = ceil(cc[0]); x[0] <= floor(bb[0]); x[0]++) {
+				x1low = calcSlopePoint(x, bb, aa);
+				x1high = calcSlopePoint(x, bb, cc);
+				for (x[1] = ceil(x1low); x[1]<= floor(x1high); x[1]++) {
+					interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+				}
+			}
+			// printf("after second forloop\n");
+		} else {
+			// printf("second else\n");
+		  for (x[0] = ceil(aa[0]); x[0] <= floor(bb[0]); x[0]++) {
+		    x1low = calcSlopePoint(x, bb, aa);
+		    x1high = calcSlopePoint(x, cc, aa);
+		    if ((ceil(aa[0]) == floor(cc[0]))) {
+					// todo: see if this case needs to be handled
+		      // break;
+		    } else {
+		      for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
+		        interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+		      }
+		    }
+		  }
+			// printf("after first forloop\n");
+		  for (x[0] = ceil(bb[0]); x[0] <= floor(cc[0]); x[0]++) {
+		    x1low = calcSlopePoint(x, cc, bb);
+		    x1high = calcSlopePoint(x, cc, aa);
+		    for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
+		      interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+		    }
+		  }
+			// printf("after second forloop\n");
 		}
 	}
-	// base of the triangle is the bottom-most edge
-	else if ((bb[0] > cc[0]) || (aa[0] == cc[0]) || (bb[0] == cc[0])) {
-		// printf("first else\n");
-		// printf("before first forloop\n");
-		for (x[0] = ceil(aa[0]); x[0] <= floor(cc[0]); x[0]++) {
-			x1low = calcSlopePoint(x, bb, aa);
-			x1high = calcSlopePoint(x, cc, aa);
-			for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
-				interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
-			}
-		}
-		// printf("before first forloop\n");
-		for (x[0] = ceil(cc[0]); x[0] <= floor(bb[0]); x[0]++) {
-			x1low = calcSlopePoint(x, bb, aa);
-			x1high = calcSlopePoint(x, bb, cc);
-			for (x[1] = ceil(x1low); x[1]<= floor(x1high); x[1]++) {
-				interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
-			}
-		}
-		// printf("after second forloop\n");
-} else {
-	// printf("second else\n");
-  for (x[0] = ceil(aa[0]); x[0] <= floor(bb[0]); x[0]++) {
-    x1low = calcSlopePoint(x, bb, aa);
-    x1high = calcSlopePoint(x, cc, aa);
-    if ((ceil(aa[0]) == floor(cc[0]))) {
-			// todo: see if this case needs to be handled
-      // break;
-    } else {
-      for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
-        interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
-      }
-    }
-  }
-	// printf("after first forloop\n");
-  for (x[0] = ceil(bb[0]); x[0] <= floor(cc[0]); x[0]++) {
-    x1low = calcSlopePoint(x, cc, bb);
-    x1high = calcSlopePoint(x, cc, aa);
-    for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
-      interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
-    }
-  }
-	// printf("after second forloop\n");
-}
-}
 }

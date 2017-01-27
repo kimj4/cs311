@@ -83,7 +83,6 @@ node's uniform vector. */
 void sceneRender(sceneNode *node, renRenderer *ren, double *unifParent) {
   // update uniform
   ren->updateUniform(ren, node->unif, unifParent);
-	// printf("updateUniform finishes\n");
 
   //render node
   meshRender(node->mesh, ren, node->unif, node->tex);

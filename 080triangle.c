@@ -53,25 +53,42 @@ int findLeftmost(double *posArray[3]) {
 
 /* function to appropriately arrange the remaining two vertices after aa has been determined*/
 void setbbPosAndccPos(double *posArray[3], int *aaPos, int *bbPos, int *ccPos) {
-	int t1, t2, i;
-	int tempCount = 0;
-	for (i = 0; i < 3; i++) {
-		if (i != *aaPos) {
-			if (tempCount == 0) {
-				t1 = i;
-				tempCount++;
-			} else {
-				t2 = i;
-			}
-		}
-	}
-  if (posArray[t1][1] < posArray[t2][1]) {
-    *bbPos = t1;
-  	*ccPos = t2;
-  } else {
-    *bbPos = t2;
-  	*ccPos = t1;
+  // a is leftmost
+  if (*aaPos == 0) {
+    *aaPos = 0;
+    *bbPos = 1;
+    *ccPos = 2;
+  } else if (*aaPos == 1) {
+    *aaPos = 1;
+    *bbPos = 2;
+    *ccPos = 0;
+  } else if (*aaPos == 2) {
+    *aaPos = 2;
+    *bbPos = 0;
+    *ccPos = 1;
   }
+  // b is leftmost
+  // c is leftmost
+  //
+	// int t1, t2, i;
+	// int tempCount = 0;
+	// for (i = 0; i < 3; i++) {
+	// 	if (i != *aaPos) {
+	// 		if (tempCount == 0) {
+	// 			t1 = i;
+	// 			tempCount++;
+	// 		} else {
+	// 			t2 = i;
+	// 		}
+	// 	}
+	// }
+  // if (posArray[t1][1] < posArray[t2][1]) {
+  //   *bbPos = t1;
+  // 	*ccPos = t2;
+  // } else {
+  //   *bbPos = t2;
+  // 	*ccPos = t1;
+  // }
 }
 
 /* function to find the contant matrix in the interpolation function*/

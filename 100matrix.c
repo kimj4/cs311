@@ -106,16 +106,16 @@ void mat33Isometry(double theta, double x, double y, double isom[3][3]) {
 }
 
 /* function to set the input 3x3 matrix into the 3x3 identity matrix*/
-void mat33SetIdentity(double I[3][3]) {
-  I[0][0] = 1.0;
-  I[0][1] = 0.0;
-  I[0][2] = 0.0;
-  I[1][0] = 0.0;
-  I[1][1] = 1.0;
-  I[1][2] = 0.0;
-  I[2][0] = 0.0;
-  I[2][1] = 0.0;
-  I[2][2] = 1.0;
+void mat33SetIdentity(double identity[3][3]) {
+  identity[0][0] = 1.0;
+  identity[0][1] = 0.0;
+  identity[0][2] = 0.0;
+  identity[1][0] = 0.0;
+  identity[1][1] = 1.0;
+  identity[1][2] = 0.0;
+  identity[2][0] = 0.0;
+  identity[2][1] = 0.0;
+  identity[2][2] = 1.0;
 }
 
 /* function to set the input 4x4 matrix into the 4x4 identity matrix*/
@@ -149,19 +149,19 @@ void mat33SetU(double axis[3], double u[3][3]) {
 rotation matrix for the rotation about that axis through that angle. Based on
 Rodrigues' rotation formula R = I + (sin alpha) U + (1 - cos alpha) U^2. */
 void mat33AngleAxisRotation(double alpha, double axis[3], double rot[3][3]) {
-  double u[3][3];
+  double u[3][3]; // temp matrix to hold u
   mat33SetU(axis, u);
 
-  double uSquared[3][3];
+  double uSquared[3][3]; // temp matrix to hold uu
   mat333Multiply(u, u, uSquared);
 
-  double I[3][3];
+  double I[3][3]; // just holds the identity matrix
   mat33SetIdentity(I);
 
   int i, j;
-  for (i = 0; i < 4; i++) {
-    for (j = 0; j < 4; j ++) {
-      rot[i][j] = I[i][j] + sin(alpha) * u[i][j] + (1 - cos(alpha)) * uSquared[i][j];
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j ++) {
+      rot[i][j] = I[i][j] + (sin(alpha) * u[i][j]) + ((1 - cos(alpha)) * uSquared[i][j]);
     }
   }
 }
@@ -249,18 +249,32 @@ void mat44Isometry(double rot[3][3], double trans[3], double isom[4][4]) {
 				tempIsom[i][j] = rot[i][j];
 			}
 		}
-		tempIsom[3][3] = 1; // the bottom right is a 1
+		tempIsom[3][0] = 0;
+		tempIsom[3][1] = 0;
+		tempIsom[3][2] = 0;
+		tempIsom[3][3] = 1;
+
+		// transcribe translations
+		tempIsom[0][3] = trans[0];
+		tempIsom[1][3] = trans[1];
+		tempIsom[2][3] = trans[2];
+
+		for (i = 0; i < 4; i++) {
+			for (j = 0; j < 4; j++) {
+				isom[i][j] = tempIsom[i][j];
+			}
+		}
 
 		// printf("tempIsom:\n");
 		// mat44Print(tempIsom);
-		double T[4][4];
-		mat44SetIdentity(T);
-		T[0][3] = trans[0];
-		T[1][3] = trans[1];
-		T[2][3] = trans[2];
+		// double T[4][4];
+		// mat44SetIdentity(T);
+		// T[0][3] = trans[0];
+		// T[1][3] = trans[1];
+		// T[2][3] = trans[2];
 		// printf("T after being set with trans\n");
 		// mat44Print(T);
-		mat444Multiply(tempIsom, T, isom);
+		// mat444Multiply(tempIsom, T, isom);
 		// printf("isom:\n");
 		// mat44Print(isom);
 

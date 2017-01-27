@@ -8,6 +8,16 @@
 #include <stdarg.h>
 /*** In general dimensions ***/
 
+
+void vecPrint(int dim, double v[]) {
+  int i;
+  printf("\n");
+  for (i = 0; i < dim; i++) {
+    printf("%f\n", v[i]);
+  }
+  printf("\n");
+}
+
 /* Copies the dim-dimensional vector v to the dim-dimensional vector copy. */
 void vecCopy(int dim, double v[], double copy[]) {
   int i;

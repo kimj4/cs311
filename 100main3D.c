@@ -58,7 +58,7 @@
 #include "090scene.c"
 
 
-double unif[renUNIFDIM];
+double unif[renUNIFDIM] = {0};
 renRenderer ren;
 int width = 512;
 int height = 512;
@@ -76,25 +76,33 @@ NULL, but instead contains a rotation-translation P, then sets the uniform
 matrix to the matrix product P * M. */
 void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
     if (unifParent == NULL) {
-        double I3[3][3];
-        mat33SetIdentity(I3);
         double rotation[3][3];
-        // double axis[3] = {1.0, 1.0, 1.0};
-        double axis[3] = {0.0, 0.0, 1.0};
-
+        double rho = 1;
+        double axis[3] = {(rho * sin(unif[renUNIFPHI]) * cos(unif[renUNIFTHETA])),
+                          (rho * sin(unif[renUNIFPHI]) * sin(unif[renUNIFTHETA])),
+                          (rho * cos(unif[renUNIFPHI]))};
         mat33AngleAxisRotation(unif[renUNIFALPHA], axis, rotation);
         double trans[3] = {unif[renUNIFTRANSX], unif[renUNIFTRANSY], unif[renUNIFTRANSZ]};
+        // vecPrint(3, trans);
         mat44Isometry(rotation, trans, (double(*)[4])(&unif[renUNIFMAT00]));
-        // printf("mat44Isometry:\n");
+
+        // printf("======== Transformation Matrix ========\n");
         // mat44Print((double(*)[4])(&unif[renUNIFMAT00]));
-        // mat44Isometry(double rot[3][3], double trans[3], double isom[4][4])
+
     } else {
-        mat44SetIdentity((double(*)[4])(&unif[renUNIFMAT00]));
-        // double m[3][3];
-        // mat33Isometry(unif[renUNIFTHETA], unif[renUNIFTRANSX],
-        //     unif[renUNIFTRANSY], m);
-        // mat333Multiply((double(*)[3])(&unifParent[renUNIFMAT00]), m,
-        //     (double(*)[3])(&unif[renUNIFMAT00]));
+      double rotation[3][3];
+      double rho = 1;
+      double axis[3] = {(rho * sin(unif[renUNIFPHI]) * cos(unif[renUNIFTHETA])),
+                        (rho * sin(unif[renUNIFPHI]) * sin(unif[renUNIFTHETA])),
+                        (rho * cos(unif[renUNIFPHI]))};
+      mat33AngleAxisRotation(unif[renUNIFALPHA], axis, rotation);
+      double trans[3] = {unif[renUNIFTRANSX], unif[renUNIFTRANSY], unif[renUNIFTRANSZ]};
+      // vecPrint(3, trans);
+      double temp[4][4];
+      mat44Isometry(rotation, trans, temp);
+      mat444Multiply((double(*)[4])(&unifParent[renUNIFMAT00]),
+                     temp,
+                     (double(*)[4])(&unif[renUNIFMAT00]));
     }
 }
 
@@ -119,6 +127,7 @@ void transformVertex(renRenderer *ren, double unif[], double attr[],
     vary[renATTRX] = temp[0];
     vary[renATTRY] = temp[1];
     vary[renVARYS] = attr[renATTRS];
+    // printf("varyxy: %f, %f\n", vary[renATTRX],vary[renATTRY]);
     vary[renVARYT] = attr[renATTRT];
 }
 
@@ -135,6 +144,7 @@ void handleTimeStep(double oldTime, double newTime) {
   sceneSetUniform(&root, &ren, unif);
   // printf("sceneSetUniform finished\n");
   sceneRender(&root, &ren, NULL);
+  // sceneRender(&root, &ren, unif);
   // printf("sceneRender finshed\n");
 }
 
@@ -143,7 +153,6 @@ int main() {
     return 1;
   } else {
     pixClearRGB(0, 0, 0);
-
     // initialize ren
     ren.attrDim = 8;
     ren.texNum = 1;
@@ -162,37 +171,23 @@ int main() {
     texSetLeftRight(&tex1, texREPEAT);
     tex[0] = &tex1;
 
-    // initialize top level unif
     unif[renUNIFTRANSX] = 200;
     unif[renUNIFTRANSY] = 200;
-    // unif[renUNIFTRANSZ] = 200;
-    unif[renUNIFALPHA] = 1;
+    unif[renUNIFTRANSZ] = -100;
+    unif[renUNIFALPHA] = 0;
     unif[renUNIFTHETA] = 0;
+    unif[renUNIFPHI] = 0;
 
     // initialize some meshes
     meshMesh mesh1;
-    // double x = 300;
-    // double y = 300;
-    // double rx = 100;
-    // double ry = 100;
-    // int sideNum = 100;
-    meshInitializeSphere(&mesh1, 50, 10, 20);
-    // meshInitializeEllipse(&mesh1, x, y, rx, ry, sideNum);
+    meshInitializeSphere(&mesh1, 150, 20, 40);
+    meshMesh mesh2;
+    meshInitializeSphere(&mesh2, 20, 20, 40);
 
-    // initialize some nodes
-    // sceneInitialize(&branch4, &ren, unif, tex, &mesh1, NULL, NULL);
-    // branch4.unif[renUNIFTRANSY] = 200;
-    // branch4.unif[renUNIFTRANSX] = 100;
-    // sceneInitialize(&branch3, &ren, unif, tex, &mesh1, NULL, &branch4);
-    // branch3.unif[renUNIFTRANSY] = 300;
-    // branch3.unif[renUNIFTRANSX] = 100;
-    // sceneInitialize(&branch2, &ren, unif, tex, &mesh1, NULL, &branch3);
-    // branch2.unif[renUNIFTRANSY] = 100;
-    // branch2.unif[renUNIFTRANSX] = 100;
-    // sceneInitialize(&branch1, &ren, unif, tex, &mesh1, &branch2, NULL);
-    // branch1.unif[renUNIFTRANSY] = 100;
-    // branch1.unif[renUNIFTRANSX] = 100;
-    sceneInitialize(&root, &ren, unif, tex, &mesh1, NULL, NULL);
+    sceneInitialize(&branch1, &ren, unif, tex, &mesh2, NULL, NULL);
+    sceneSetOneUniform(&branch1, renUNIFTRANSX, 100);
+    sceneSetOneUniform(&branch1, renUNIFTRANSY, 100);
+    sceneInitialize(&root, &ren, unif, tex, &mesh1, &branch1, NULL);
     pixSetTimeStepHandler(handleTimeStep);
     pixRun();
   }
