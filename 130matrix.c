@@ -1,9 +1,9 @@
 /*
- * 100matrix.c
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * now with 4x4 isom calculators as well as some helper functions for those
+ * file containing various implementations of matrix operations
+ * 100: now with dim 4 matrix operations
  */
 
 #include <math.h>
@@ -206,15 +206,6 @@ void mat33BasisRotation(double u[3], double v[3], double a[3], double b[3],
 			mat333Multiply(S, RTransposed, rot);
 }
 
-void mat44Copy(double start[4][4], double end[4][4]) {
-	int i, j;
-	for (i = 0; i < 4; i ++) {
-		for (j = 0; j < 4; j ++) {
-			end[i][j] = start[i][j];
-		}
-	}
-}
-
 /* Multiplies m by n, placing the answer in mTimesN. */
 void mat444Multiply(double m[4][4], double n[4][4], double mTimesN[4][4]) {
   mTimesN[0][0] = (m[0][0] * n[0][0]) + (m[0][1] * n[1][0]) + (m[0][2] * n[2][0]) + (m[0][3] * n[3][0]);
@@ -281,22 +272,21 @@ That is, the isom produced by this function is the inverse to the isom
 produced by mat44Isometry on the same inputs. */
 void mat44InverseIsometry(double rot[3][3], double trans[3],
         double isom[4][4]) {
-		double rotInv[3][3], newTrans[3];
-		int i, j;
-		mat33Transpose(rot, rotInv);
-		mat331Multiply(rotInv, trans, newTrans);
-		vecScale(3, -1, newTrans, newTrans);
+		// isom inverse = M inverse * T inverse
+		double transInv[3];
+		double MInv[3][3];
+		mat331Multiply(MInv, trans, transInv);
+		vecScale(3, -1, transInv, transInv);
+		mat33Transpose(rot, MInv);
+		int i,j;
 
 		for (i = 0; i < 3; i++) {
 			for (j = 0; j < 3; j++) {
-				isom[i][j] = rotInv[i][j];
+				isom[i][j] = MInv[i][j];
 			}
 		}
-		isom[0][3] = newTrans[0];
-		isom[1][3] = newTrans[1];
-		isom[2][3] = newTrans[2];
 		isom[3][3] = 1;
-		// printf("isom:\n");
-		// mat44Print(isom);
-		// printf("\n");
+		isom[0][3] = transInv[0];
+		isom[1][3] = transInv[1];
+		isom[1][3] = transInv[2];
 }
