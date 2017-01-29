@@ -83,6 +83,7 @@ int findInverseMatrixMultiplier(double aa[], double bb[], double cc[], double re
    that color. */
 void interpolateAndSet(renRenderer *ren, double unif[], texTexture *tex[], double x[],
 	double aa[], double bb[], double cc[], double pq[], double invLeftMatrix[2][2]) {
+	// printf("top of interpolateAndSet\n");
 	double xMinusA[renVARYDIMBOUND], newRGBZ[4], vary[renVARYDIMBOUND];
 	vecSubtract(2, x, aa, xMinusA);
 	calculatePQ(invLeftMatrix, xMinusA, pq);
@@ -94,6 +95,8 @@ void interpolateAndSet(renRenderer *ren, double unif[], texTexture *tex[], doubl
     depthSetZ(ren->depth, (int)x[0], (int)x[1], newRGBZ[3]);
     pixSetRGB(x[0], x[1], newRGBZ[0], newRGBZ[1], newRGBZ[2]);
   }
+	// printf("x: (%f, %f)\n", x[0], x[1]);
+	// printf("bottom of interpolateAndSet\n");
 }
 
 /* refactored version of calculating the veritcal value from the horizontal value and given
@@ -107,7 +110,8 @@ double calcSlopePoint(double x[], double final[], double initial[]) {
 void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double a[], double b[], double c[]) {
 
-
+	// printf("a:(%f, %f)\n", a[0], a[1]);
+	// printf("triRender top\n");
 	double *posArray[3] = {a, b, c};
 	int aaPos, bbPos, ccPos;
 	aaPos = findLeftmost(posArray);
@@ -119,8 +123,10 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	// calculate constants
 	double invLeftMatrix[2][2];
 	if (findInverseMatrixMultiplier(aa, bb, cc, invLeftMatrix) < 0) {
+		// printf("backface\n");
 		return; // backface culling
 	} else {
+		// printf("triangles are being rendered\n");
 		// rasterize
 		double x1low, x1high, x[2], pq[2];
 		// special case handling for vertical line
@@ -141,7 +147,7 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 					interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
 				}
 			}
-			// printf("before first forloop\n");
+			// printf("before second forloop\n");
 			for (x[0] = ceil(cc[0]); x[0] <= floor(bb[0]); x[0]++) {
 				x1low = calcSlopePoint(x, bb, aa);
 				x1high = calcSlopePoint(x, bb, cc);

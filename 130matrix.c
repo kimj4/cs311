@@ -206,6 +206,15 @@ void mat33BasisRotation(double u[3], double v[3], double a[3], double b[3],
 			mat333Multiply(S, RTransposed, rot);
 }
 
+void mat44Copy(double start[4][4], double end[4][4]) {
+	int i, j;
+	for (i = 0; i < 4; i ++) {
+		for (j = 0; j < 4; j ++) {
+			end[i][j] = start[i][j];
+		}
+	}
+}
+
 /* Multiplies m by n, placing the answer in mTimesN. */
 void mat444Multiply(double m[4][4], double n[4][4], double mTimesN[4][4]) {
   mTimesN[0][0] = (m[0][0] * n[0][0]) + (m[0][1] * n[1][0]) + (m[0][2] * n[2][0]) + (m[0][3] * n[3][0]);
@@ -289,4 +298,82 @@ void mat44InverseIsometry(double rot[3][3], double trans[3],
 		isom[0][3] = transInv[0];
 		isom[1][3] = transInv[1];
 		isom[1][3] = transInv[2];
+}
+
+/* Builds a 4x4 matrix representing orthographic projection with a boxy viewing
+volume [left, right] x [bottom, top] x [far, near]. That is, on the near plane
+the box is the rectangle R = [left, right] x [bottom, top], and on the far
+plane the box is the same rectangle R. Keep in mind that 0 > near > far. Maps
+the viewing volume to [-1, 1] x [-1, 1] x [-1, 1]. */
+void mat44Orthographic(double left, double right, double bottom, double top,
+        double far, double near, double proj[4][4]) {
+		// this was double checked
+		proj[0][0] = 2 / (right - left);
+		proj[0][1] = 0;
+		proj[0][2] = 0;
+		proj[0][3] = (-right - left) / (right - left);
+
+		proj[1][0] = 0;
+		proj[1][1] = 2 / (top - bottom);
+		proj[1][2] = 0;
+		proj[1][3] = (-top - bottom) / (top - bottom);
+
+		proj[2][0] = 0;
+		proj[2][1] = 0;
+		proj[2][2] = 2 / (near - far);
+		proj[2][3] = (-near - far) / (near - far);
+
+		proj[3][0] = 0;
+		proj[3][1] = 0;
+		proj[3][2] = 0;
+		proj[3][3] = 1;
+}
+
+/* Builds a 4x4 matrix that maps a projected viewing volume
+[-1, 1] x [-1, 1] x [-1, 1] to screen [0, w - 1] x [0, h - 1] x [-1, 1]. */
+void mat44Viewport(double width, double height, double view[4][4]) {
+		view[0][0] = (width - 1) / 2;
+		view[0][1] = 0;
+		view[0][2] = 0;
+		view[0][3] = (width - 1) / 2;
+		view[1][0] = 0;
+		view[1][1] = (height - 1) / 2;
+		view[1][2] = 0;
+		view[1][3] = (height - 1) / 2;
+		view[2][0] = 0;
+		view[2][1] = 0;
+		view[2][2] = 1;
+		view[2][3] = 0;
+		view[3][0] = 0;
+		view[3][1] = 0;
+		view[3][2] = 0;
+		view[3][3] = 1;
+}
+
+/* Builds a 4x4 matrix representing perspective projection. The viewing frustum
+is contained between the near and far planes, with 0 > near > far. On the near
+plane, the frustum is the rectangle R = [left, right] x [bottom, top]. On the
+far plane, the frustum is the rectangle (far / near) * R. Maps the viewing
+volume to [-1, 1] x [-1, 1] x [-1, 1]. */
+void mat44Perspective(double left, double right, double bottom, double top,
+        double far, double near, double proj[4][4]) {
+		proj[0][0] = (-2 * near) / (right - left);
+		proj[0][1] = 0;
+		proj[0][2] = (right + left) / (right - left);
+		proj[0][3] = 0;
+
+		proj[1][0] = 0;
+		proj[1][1] = (-2 * near) / (top - bottom);
+		proj[1][2] = (top + bottom) / (top - bottom);
+		proj[1][3] = 0;
+
+		proj[2][0] = 0;
+		proj[2][1] = 0;
+		proj[2][2] = (-near - far) / (near - far);
+		proj[2][3] = (2 * near * far) / (near - far);
+
+		proj[3][0] = 0;
+		proj[3][1] = 0;
+		proj[3][2] = -1;
+		proj[3][3] = 0;
 }

@@ -1,1 +1,1 @@
-clang 120mainCamera.c 000pixel.o -lglfw3 -lGL -lm -lXrandr -lXi -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lXcursor -lrt
+clang 130mainProjection.c 000pixel.o -lglfw3 -lGL -lm -lXrandr -lXi -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lXcursor -lrt
