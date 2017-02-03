@@ -3,20 +3,11 @@
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * main program to test projection
+ * main program to test near clipping
  */
 
-
-//TODO: what is viewing vs viewport?
-//TODO: which matrix is C inverse
-// from notes: V * P * CInv * M * attrxyz1
-//  M = modeling ----------- result: world coordinates
-//  CInv = from camera ----- result: eye coordinates
-//  P = projection --------- result: clip space coordinates
-//  V = viewport ----------- result: screen space coordinates
-// from notes: combine VPCinv into one, pass in two matrices, this and M
-#define renVARYDIMBOUND 16
-#define renVERTNUMBOUND 1000
+#define renVARYDIMBOUND 40
+#define renVERTNUMBOUND 200000
 
 #define renATTRDIM 8
 #define renATTRX 0
@@ -28,15 +19,16 @@
 #define renATTRG 6
 #define renATTRB 7
 
-#define renVARYDIM 8
+#define renVARYDIM 9
 #define renVARYX 0
 #define renVARYY 1
 #define renVARYZ 2
-#define renVARYS 3
-#define renVARYT 4
-#define renVARYR 5
-#define renVARYG 6
-#define renVARYB 7
+#define renVARYW 3
+#define renVARYS 4
+#define renVARYT 5
+#define renVARYR 6
+#define renVARYG 7
+#define renVARYB 8
 
 #define renUNIFDIM 41
 #define renUNIFR 0
@@ -48,7 +40,7 @@
 #define renUNIFALPHA 6
 #define renUNIFPHI 7
 #define renUNIFTHETA 8
-#define renUNIFMAT00 9
+#define renUNIFM 9
 #define renUNIFVIEWINGMAT 25
 
 #define texNUM 1
@@ -66,7 +58,8 @@
 #include "110depth.c"
 #include "130renderer.c"
 #include "110triangle.c"
-#include "100mesh.c"
+#include "140clipping.c"
+#include "140mesh.c"
 #include "090scene.c"
 
 
@@ -78,10 +71,6 @@ double target[3];
 double lookatRho, lookatPhi, lookatTheta;
 texTexture *tex[texNUM];
 sceneNode root;
-sceneNode branch1;
-sceneNode branch2;
-sceneNode branch3;
-sceneNode branch4;
 
 /* If unifParent is NULL, then sets the uniform matrix to the
 rotation-translation M described by the other uniforms. If unifParent is not
@@ -90,7 +79,6 @@ matrix to the matrix product P * M. */
 void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
     // OLD from 120
     if (unifParent == NULL) {
-
         // make a rotation-translation matrix based on unifs
         double rotation[3][3];
         double rho = 1;
@@ -98,7 +86,7 @@ void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
         vec3Spherical(rho, unif[renUNIFPHI], unif[renUNIFTHETA], axis);
         mat33AngleAxisRotation(unif[renUNIFALPHA], axis, rotation);
         double trans[3] = {unif[renUNIFTRANSX], unif[renUNIFTRANSY], unif[renUNIFTRANSZ]};
-        mat44Isometry(rotation, trans, (double(*)[4])(&unif[renUNIFMAT00]));
+        mat44Isometry(rotation, trans, (double(*)[4])(&unif[renUNIFM]));
         // copy into the current mesh's unif
         mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
     } else {
@@ -112,9 +100,9 @@ void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
         double temp[4][4];
         mat44Isometry(rotation, trans, temp);
         // multiply with the existing rotation-translation matrix from the parent
-        mat444Multiply((double(*)[4])(&unifParent[renUNIFMAT00]),
+        mat444Multiply((double(*)[4])(&unifParent[renUNIFM]),
                        temp,
-                       (double(*)[4])(&unif[renUNIFMAT00]));
+                       (double(*)[4])(&unif[renUNIFM]));
         // copy into the current mesh's unif
         mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
     }
@@ -135,25 +123,20 @@ void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
 /* Writes the vary vector, based on the other parameters. */
 void transformVertex(renRenderer *ren, double unif[], double attr[],
         double vary[]) {
-    double tempMat[4][4], tempVec[4];
+    double tempMat[4][4];
     double expandedAttr[4] = {attr[renATTRX], attr[renATTRY], attr[renATTRZ], 1};
     double homog[4];
-    // do modeling and viewing transformation
+    // vecPrint(4, expandedAttr);
+
     mat444Multiply((double(*)[4])(&unif[renUNIFVIEWINGMAT]),
-                   (double(*)[4])(&unif[renUNIFMAT00]),
+                   (double(*)[4])(&unif[renUNIFM]),
                     tempMat);
     mat441Multiply(tempMat, expandedAttr, homog);
-    // divide result by the last coordinates
-    // if (ren->projectionType == renPERSPECTIVE) {
-    //   vecScale(4, 1 / homog[3], homog, homog);
-    // }
-    // vecPrint(4, homog);
-    vecScale(4, 1 / homog[3], homog, homog);
-    mat441Multiply(ren->viewport, homog, tempVec);
 
-    vary[renVARYX] = tempVec[0];
-    vary[renVARYY] = tempVec[1];
-    vary[renVARYZ] = tempVec[2];
+    vary[renVARYX] = homog[0];
+    vary[renVARYY] = homog[1];
+    vary[renVARYZ] = homog[2];
+    vary[renVARYW] = homog[3];
     vary[renVARYS] = attr[renATTRS];
     vary[renVARYT] = attr[renATTRT];
 }
@@ -163,25 +146,6 @@ void handleTimeStep(double oldTime, double newTime) {
   if (floor(newTime) - floor(oldTime) >= 1.0) {
     printf("handleTimeStep: %f frames/sec\n", 1.0 / (newTime - oldTime));
   }
-  // renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
-  // // printf("a\n");
-  // // renSetFrustum(&ren, renORTHOGRAPHIC, M_PI / 6.0, 10.0, 10.0);
-  // renSetFrustum(&ren, renPERSPECTIVE, M_PI / 6.0, 10.0, 10.0);
-  // // printf("b\n");
-  // renUpdateViewing(&ren);
-  // // printf("c\n");
-  // pixClearRGB(0, 0, 0);
-  // // printf("d\n");
-  // depthClearZs(ren.depth, -99999);
-  // // printf("e\n");
-  // sceneSetUniform(&root, &ren, unif);
-  // // printf("f\n");
-  // // int a = 1;
-  // // if (a == 1) {
-  // //   sceneRender(&root, &ren, NULL);
-  // //   a++;
-  // // }
-  // // printf("g\n");
 }
 
 
@@ -193,16 +157,16 @@ void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
 		key, shiftIsDown, controlIsDown, altOptionIsDown, superCommandIsDown);
   switch (key) {
     case 49: {
-      lookatRho -= 10;
+      // lookatRho -= 10;
       // printf("lookatRho: %f\n", lookatRho);
-      // unif[renUNIFTRANSZ] -= 10;
+      unif[renUNIFTRANSZ] -= 10;
       renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 50: {
-      lookatRho += 10;
+      // lookatRho += 10;
       // printf("lookatRho: %f\n", lookatRho);
-      // unif[renUNIFTRANSZ] += 10;
+      unif[renUNIFTRANSZ] += 10;
       renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
@@ -256,9 +220,9 @@ void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
     // printf("b\n");
     renUpdateViewing(&ren);
     // printf("c\n");
-    pixClearRGB(0, 0, 0);
+    pixClearRGB(1, 0, 0);
     // printf("d\n");
-    depthClearZs(ren.depth, -99999);
+    depthClearZs(ren.depth, -999999999);
     // printf("e\n");
     sceneSetUniform(&root, &ren, unif);
     sceneRender(&root, &ren, NULL);
@@ -285,8 +249,8 @@ int main() {
     ren.updateUniform = updateUniform;
     target[0] = 0.0;
     target[1] = 0.0;
-    target[2] = 0.0;
-    lookatRho = 1.0;
+    target[2] = -100.0;
+    lookatRho = 10.0;
     lookatPhi = 0.0;
     lookatTheta = 0.0;
     // renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
@@ -302,15 +266,16 @@ int main() {
 
     unif[renUNIFTRANSX]  = 0;
     unif[renUNIFTRANSY] = 0;
-    unif[renUNIFTRANSZ] = -1250;
+    // unif[renUNIFTRANSZ] = 100;
     // unif[renUNIFTRANSZ] = -500;
+    unif[renUNIFTRANSZ] = -500;
     unif[renUNIFALPHA] = 0;
     unif[renUNIFTHETA] = 0;
     unif[renUNIFPHI] = 0;
 
     // initialize some meshes
     meshMesh mesh1;
-    meshInitializeSphere(&mesh1, 250, 20, 40);
+    meshInitializeSphere(&mesh1, 100, 10, 20);
 
     sceneInitialize(&root, &ren, unif, tex, &mesh1, NULL, NULL);
     pixSetTimeStepHandler(handleTimeStep);

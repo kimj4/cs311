@@ -336,14 +336,17 @@ void mat44Viewport(double width, double height, double view[4][4]) {
 		view[0][1] = 0;
 		view[0][2] = 0;
 		view[0][3] = (width - 1) / 2;
+
 		view[1][0] = 0;
 		view[1][1] = (height - 1) / 2;
 		view[1][2] = 0;
 		view[1][3] = (height - 1) / 2;
+
 		view[2][0] = 0;
 		view[2][1] = 0;
 		view[2][2] = 1;
 		view[2][3] = 0;
+		
 		view[3][0] = 0;
 		view[3][1] = 0;
 		view[3][2] = 0;
