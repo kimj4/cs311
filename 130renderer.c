@@ -1,9 +1,9 @@
 /*
- * 120renderer.c
+ * 130renderer.c
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * now with some functions for the camera
+ * now with some functions for clipping
  */
 #define renORTHOGRAPHIC 0
 #define renPERSPECTIVE 1
@@ -68,15 +68,11 @@ void renLookFrom(renRenderer *ren, double position[3], double phi,
 
 /* Updates the renderer's viewing transformation, based on the camera. */
 void renUpdateViewing(renRenderer *ren) {
-    // CHECK: do I do this here? The matrix made by isometry is then multiplied
-    //        by the perspective for now
     double tempIsom[4][4], tempProj[4][4];
 		// this is the c inverse, camera stuff
     mat44InverseIsometry(ren->cameraRotation, ren->cameraTranslation, tempIsom);
-		// printf("ren->projection[renPROJL]: %f\n", ren->projection[renPROJL]);
-		// printf("ren->projection[renPROJR]: %f\n", ren->projection[renPROJR]);
 
-		// this is the p, perspective
+		// this is the p, projection
     if (ren->projectionType == renORTHOGRAPHIC) {
       mat44Orthographic(ren->projection[renPROJL], ren->projection[renPROJR],
                         ren->projection[renPROJB], ren->projection[renPROJT],
@@ -92,11 +88,6 @@ void renUpdateViewing(renRenderer *ren) {
     // final product for viewing
 		// viewing combines projection and camera
     mat444Multiply(tempProj, tempIsom, ren->viewing);
-		// mat444Multiply(tempIsom, tempProj, ren->viewing);
-
-		// mat44Copy(tempProj, ren->viewing);
-		// mat44Print(ren->viewing);
-    // set viewport
     mat44Viewport(ren->depth->width, ren->depth->height, ren->viewport);
 }
 

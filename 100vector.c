@@ -55,7 +55,7 @@ Sets the dim-dimensional vector v to those doubles. */
 void vecSet(int dim, double v[], ...) {
   int i;
   va_list argumentPointer;
-  va_start(argumentPointer, dim);
+  va_start(argumentPointer, v);
   for (i = 0; i < dim; i++) {
     v[i] = va_arg(argumentPointer, double);
   }
@@ -68,7 +68,7 @@ double vecDot(int dim, double v[], double w[]) {
   double dotProd = 0;
   int i;
   for (i = 0; i < dim; i++) {
-    dotProd = v[i] * w[i];
+    dotProd = dotProd + (v[i] * w[i]);
   }
   return dotProd;
 }

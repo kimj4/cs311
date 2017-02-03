@@ -1,9 +1,9 @@
 /*
- * 130mainProjection.c
+ * 140mainClipping.c
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * main program to test near clipping
+ * main program to test clipping
  */
 
 #define renVARYDIMBOUND 40
@@ -81,11 +81,12 @@ void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
     if (unifParent == NULL) {
         // make a rotation-translation matrix based on unifs
         double rotation[3][3];
-        double rho = 1;
+        double rho = lookatRho;
         double axis[3];
+        double trans[3] = {unif[renUNIFTRANSX], unif[renUNIFTRANSY], unif[renUNIFTRANSZ]};
+
         vec3Spherical(rho, unif[renUNIFPHI], unif[renUNIFTHETA], axis);
         mat33AngleAxisRotation(unif[renUNIFALPHA], axis, rotation);
-        double trans[3] = {unif[renUNIFTRANSX], unif[renUNIFTRANSY], unif[renUNIFTRANSZ]};
         mat44Isometry(rotation, trans, (double(*)[4])(&unif[renUNIFM]));
         // copy into the current mesh's unif
         mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
@@ -112,7 +113,6 @@ void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
 interpolated attribute vector. */
 void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
                 double vary[], double rgbz[]) {
-  // printf("vary position: (%f, %f)\n", vary[renVARYX], vary[renVARYY]);
   texSample(tex[0], vary[renVARYS], vary[renVARYT]);
   rgbz[0] = tex[0]->sample[renTEXR];
   rgbz[1] = tex[0]->sample[renTEXG];
@@ -126,8 +126,6 @@ void transformVertex(renRenderer *ren, double unif[], double attr[],
     double tempMat[4][4];
     double expandedAttr[4] = {attr[renATTRX], attr[renATTRY], attr[renATTRZ], 1};
     double homog[4];
-    // vecPrint(4, expandedAttr);
-
     mat444Multiply((double(*)[4])(&unif[renUNIFVIEWINGMAT]),
                    (double(*)[4])(&unif[renUNIFM]),
                     tempMat);
@@ -157,16 +155,12 @@ void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
 		key, shiftIsDown, controlIsDown, altOptionIsDown, superCommandIsDown);
   switch (key) {
     case 49: {
-      // lookatRho -= 10;
-      // printf("lookatRho: %f\n", lookatRho);
-      unif[renUNIFTRANSZ] -= 10;
+      lookatRho -= 10;
       renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 50: {
-      // lookatRho += 10;
-      // printf("lookatRho: %f\n", lookatRho);
-      unif[renUNIFTRANSZ] += 10;
+      lookatRho += 10;
       renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
@@ -214,16 +208,11 @@ void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
   if (key) {
     printf("aaaa\n" );
     renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
-    // printf("a\n");
-    // renSetFrustum(&ren, renORTHOGRAPHIC, M_PI / 6.0, 10.0, 10.0);
-    renSetFrustum(&ren, renPERSPECTIVE, M_PI / 6.0, 10.0, 10.0);
-    // printf("b\n");
+    renSetFrustum(&ren, renORTHOGRAPHIC, M_PI / 6.0, 10.0, 10.0);
+    // renSetFrustum(&ren, renPERSPECTIVE, M_PI / 6.0, 10.0, 10.0);
     renUpdateViewing(&ren);
-    // printf("c\n");
-    pixClearRGB(1, 0, 0);
-    // printf("d\n");
+    pixClearRGB(0, 0, 0);
     depthClearZs(ren.depth, -999999999);
-    // printf("e\n");
     sceneSetUniform(&root, &ren, unif);
     sceneRender(&root, &ren, NULL);
   }
@@ -234,7 +223,6 @@ int main() {
   if (pixInitialize(width, height, "Pixel Graphics") != 0) {
     return 1;
   } else {
-    // pixClearRGB(0, 0, 0);
     depthBuffer dBuffer;
     depthInitialize(&dBuffer, width, height);
 
@@ -247,13 +235,16 @@ int main() {
     ren.transformVertex = transformVertex;
     ren.colorPixel = colorPixel;
     ren.updateUniform = updateUniform;
+
     target[0] = 0.0;
     target[1] = 0.0;
-    target[2] = -100.0;
-    lookatRho = 10.0;
+    target[2] = 0.0;
+    lookatRho = 1000.0;
     lookatPhi = 0.0;
     lookatTheta = 0.0;
-    // renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
+
+    renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
+    renUpdateViewing(&ren);
 
     // initialize textures`
     texTexture tex1;
@@ -266,16 +257,14 @@ int main() {
 
     unif[renUNIFTRANSX]  = 0;
     unif[renUNIFTRANSY] = 0;
-    // unif[renUNIFTRANSZ] = 100;
-    // unif[renUNIFTRANSZ] = -500;
-    unif[renUNIFTRANSZ] = -500;
+    unif[renUNIFTRANSZ] = 0;
     unif[renUNIFALPHA] = 0;
     unif[renUNIFTHETA] = 0;
     unif[renUNIFPHI] = 0;
 
     // initialize some meshes
     meshMesh mesh1;
-    meshInitializeSphere(&mesh1, 100, 10, 20);
+    meshInitializeSphere(&mesh1, 150, 20, 40);
 
     sceneInitialize(&root, &ren, unif, tex, &mesh1, NULL, NULL);
     pixSetTimeStepHandler(handleTimeStep);

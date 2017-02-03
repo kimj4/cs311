@@ -1,9 +1,11 @@
 /*
+ * 130matrix.c
  * Ju Yun Kim
  * Carleton College
  * CS 311
  * file containing various implementations of matrix operations
- * 100: now with dim 4 matrix operations
+ * 130: contains methods for orthographic and perspective projections.
+ * also contains viewport transformation.
  */
 
 #include <math.h>
@@ -66,7 +68,6 @@ void mat44Print(double m[4][4]) {
 
 /* Multiplies the 3x3 matrix m by the 3x3 matrix n. */
 void mat333Multiply(double m[3][3], double n[3][3], double mTimesN[3][3]) {
-
   mTimesN[0][0] = (m[0][0] * n[0][0]) + (m[0][1] * n[1][0]) + (m[0][2] * n[2][0]);
   mTimesN[0][1] = (m[0][0] * n[0][1]) + (m[0][1] * n[1][1]) + (m[0][2] * n[2][1]);
   mTimesN[0][2] = (m[0][0] * n[0][2]) + (m[0][1] * n[1][2]) + (m[0][2] * n[2][2]);
@@ -82,8 +83,6 @@ void mat333Multiply(double m[3][3], double n[3][3], double mTimesN[3][3]) {
 
 /* Multiplies the 3x3 matrix m by the 3x1 matrix v. */
 void mat331Multiply(double m[3][3], double v[3], double mTimesV[3]) {
-  // printf("m[0][0]: %f\n", m[0][0]);
-  // printf("m[1][0]: %f\n", m[1][0]);
   mTimesV[0] = (m[0][0] * v[0]) + (m[0][1] * v[1]) + (m[0][2] * v[2]);
   mTimesV[1] = (m[1][0] * v[0]) + (m[1][1] * v[1]) + (m[1][2] * v[2]);
   mTimesV[2] = (m[2][0] * v[0]) + (m[2][1] * v[1]) + (m[2][2] * v[2]);
@@ -193,6 +192,7 @@ Given two length-1 3D vectors a, b that are perpendicular to each other. Builds
 the rotation matrix that rotates u to a and v to b. */
 void mat33BasisRotation(double u[3], double v[3], double a[3], double b[3],
         double rot[3][3]) {
+
       double R[3][3];
       double w[3]; // w = u x v
 			vec3Cross(u, v, w);
@@ -251,28 +251,21 @@ void mat441Multiply(double m[4][4], double v[4], double mTimesV[4]) {
 representing the rotation followed in time by the translation. */
 void mat44Isometry(double rot[3][3], double trans[3], double isom[4][4]) {
 		int i, j;
-		double tempIsom[4][4];
 		// transcribe the 3x3 rot matrix into the 4x4 isom matrix, left upper corner
 		for (i = 0; i < 3; i ++) {
 			for (j = 0; j < 3; j ++) {
-				tempIsom[i][j] = rot[i][j];
+				isom[i][j] = rot[i][j];
 			}
 		}
-		tempIsom[3][0] = 0;
-		tempIsom[3][1] = 0;
-		tempIsom[3][2] = 0;
-		tempIsom[3][3] = 1;
-
 		// transcribe translations
-		tempIsom[0][3] = trans[0];
-		tempIsom[1][3] = trans[1];
-		tempIsom[2][3] = trans[2];
+		isom[0][3] = trans[0];
+		isom[1][3] = trans[1];
+		isom[2][3] = trans[2];
 
-		for (i = 0; i < 4; i++) {
-			for (j = 0; j < 4; j++) {
-				isom[i][j] = tempIsom[i][j];
-			}
-		}
+		isom[3][0] = 0;
+		isom[3][1] = 0;
+		isom[3][2] = 0;
+		isom[3][3] = 1;
 }
 
 /* Given a rotation and translation, forms the 4x4 homogeneous matrix
@@ -284,9 +277,9 @@ void mat44InverseIsometry(double rot[3][3], double trans[3],
 		// isom inverse = M inverse * T inverse
 		double transInv[3];
 		double MInv[3][3];
+		mat33Transpose(rot, MInv);
 		mat331Multiply(MInv, trans, transInv);
 		vecScale(3, -1, transInv, transInv);
-		mat33Transpose(rot, MInv);
 		int i,j;
 
 		for (i = 0; i < 3; i++) {
@@ -294,10 +287,14 @@ void mat44InverseIsometry(double rot[3][3], double trans[3],
 				isom[i][j] = MInv[i][j];
 			}
 		}
-		isom[3][3] = 1;
+
 		isom[0][3] = transInv[0];
 		isom[1][3] = transInv[1];
-		isom[1][3] = transInv[2];
+		isom[2][3] = transInv[2];
+		isom[3][0] = 0;
+		isom[3][1] = 0;
+		isom[3][2] = 0;
+		isom[3][3] = 1;
 }
 
 /* Builds a 4x4 matrix representing orthographic projection with a boxy viewing
@@ -346,7 +343,7 @@ void mat44Viewport(double width, double height, double view[4][4]) {
 		view[2][1] = 0;
 		view[2][2] = 1;
 		view[2][3] = 0;
-		
+
 		view[3][0] = 0;
 		view[3][1] = 0;
 		view[3][2] = 0;
