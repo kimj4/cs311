@@ -142,29 +142,33 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 			// printf("before first forloop\n");
 			for (x[0] = ceil(aa[renVARYX]); x[0] <= floor(cc[renVARYX]); x[0]++) {
 				if (x[0] > ren->depth->width - 1 || x[0] < 0) {
-					break;
-				}
-				x1low = calcSlopePoint(x, bb, aa);
-				x1high = calcSlopePoint(x, cc, aa);
-				for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
-					if (x[1] > ren->depth->height - 1 || x[1] < 1) {
-						break;
+
+				} else {
+					x1low = calcSlopePoint(x, bb, aa);
+					x1high = calcSlopePoint(x, cc, aa);
+					for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
+						if (x[1] > ren->depth->height - 1 || x[1] < 0) {
+							// break;
+						} else {
+							interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+						}
 					}
-					interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
 				}
 			}
 			// printf("before second forloop\n");
 			for (x[0] = ceil(cc[renVARYX]); x[0] <= floor(bb[renVARYX]); x[0]++) {
 				if (x[0] > ren->depth->width - 1 || x[0] < 0) {
-					break;
-				}
-				x1low = calcSlopePoint(x, bb, aa);
-				x1high = calcSlopePoint(x, bb, cc);
-				for (x[1] = ceil(x1low); x[1]<= floor(x1high); x[1]++) {
-					if (x[1] > ren->depth->height - 1 || x[1] < 1) {
-						break;
+					// break;
+				} else {
+					x1low = calcSlopePoint(x, bb, aa);
+					x1high = calcSlopePoint(x, bb, cc);
+					for (x[1] = ceil(x1low); x[1]<= floor(x1high); x[1]++) {
+						if (x[1] > ren->depth->height - 1 || x[1] < 0) {
+							// break;
+						} else {
+							interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+						}
 					}
-					interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
 				}
 			}
 			// printf("after second forloop\n");
@@ -172,35 +176,39 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 			// printf("second else\n");
 		  for (x[0] = ceil(aa[renVARYX]); x[0] <= floor(bb[renVARYX]); x[0]++) {
 				if (x[0] > ren->depth->width - 1 || x[0] < 0) {
-					break;
+					// break;
+				} else {
+			    x1low = calcSlopePoint(x, bb, aa);
+			    x1high = calcSlopePoint(x, cc, aa);
+			    if ((ceil(aa[renVARYX]) == floor(cc[renVARYX]))) {
+						// todo: see if this case needs to be handled
+			      // break;
+			    } else {
+			      for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
+							if (x[1] > ren->depth->height - 1 || x[1] < 0) {
+								// break;
+							} else {
+			        	interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+							}
+			      }
+			    }
 				}
-		    x1low = calcSlopePoint(x, bb, aa);
-		    x1high = calcSlopePoint(x, cc, aa);
-		    if ((ceil(aa[renVARYX]) == floor(cc[renVARYX]))) {
-					// todo: see if this case needs to be handled
-		      // break;
-		    } else {
-		      for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
-						if (x[1] > ren->depth->height - 1 || x[1] < 1) {
-							break;
-						}
-		        interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
-		      }
-		    }
 		  }
 			// printf("after first forloop\n");
 		  for (x[0] = ceil(bb[renVARYX]); x[0] <= floor(cc[renVARYX]); x[0]++) {
 				if (x[0] > ren->depth->width - 1 || x[0] < 0) {
-					break;
+					// break;
+				} else {
+			    x1low = calcSlopePoint(x, cc, bb);
+			    x1high = calcSlopePoint(x, cc, aa);
+			    for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
+						if (x[1] > ren->depth->height - 1 || x[1] < 0) {
+							// break;
+						} else {
+			      	interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+						}
+			    }
 				}
-		    x1low = calcSlopePoint(x, cc, bb);
-		    x1high = calcSlopePoint(x, cc, aa);
-		    for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
-					if (x[1] > ren->depth->height - 1 || x[1] < 1) {
-						break;
-					}
-		      interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
-		    }
 		  }
 			// printf("after second forloop\n");
 		}
