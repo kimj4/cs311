@@ -19,7 +19,7 @@
 #define renATTRG 6
 #define renATTRB 7
 
-#define renVARYDIM 9
+#define renVARYDIM 15
 #define renVARYX 0
 #define renVARYY 1
 #define renVARYZ 2
@@ -29,8 +29,14 @@
 #define renVARYR 6
 #define renVARYG 7
 #define renVARYB 8
+#define renVARYWORLDX 9
+#define renVARYWORLDY 10
+#define renVARYWORLDZ 11
+#define renVARYWORLDNORMALX 12
+#define renVARYWORLDNORMALY 13
+#define renVARYWORLDNORMALZ 14
 
-#define renUNIFDIM 41
+#define renUNIFDIM 47
 #define renUNIFR 0
 #define renUNIFG 1
 #define renUNIFB 2
@@ -42,6 +48,12 @@
 #define renUNIFTHETA 8
 #define renUNIFM 9
 #define renUNIFVIEWINGMAT 25
+#define renUNIFLIGHTX 41
+#define renUNIFLIGHTY 42
+#define renUNIFLIGHTZ 43
+#define renUNIFLIGHTR 44
+#define renUNIFLIGHTG 45
+#define renUNIFLIGHTB 46
 
 #define texNUM 1
 #define renTEXR 0
@@ -239,7 +251,7 @@ int main() {
     target[0] = 0.0;
     target[1] = 0.0;
     target[2] = 0.0;
-    lookatRho = 20.0;
+    lookatRho = 1000.0;
     lookatPhi = 0.0;
     lookatTheta = 0.0;
 
@@ -264,8 +276,8 @@ int main() {
 
     // initialize some meshes
     meshMesh mesh1;
-    // meshInitializeSphere(&mesh1, 150, 20, 40);
-    meshInitializeBox(&mesh1, 0, 100, 0, 100, 0, 100);
+    meshInitializeSphere(&mesh1, 150, 20, 40);
+    // meshInitializeBox(&mesh1, 0, 100, 0, 100, 0, 100);
 
     sceneInitialize(&root, &ren, unif, tex, &mesh1, NULL, NULL);
     pixSetTimeStepHandler(handleTimeStep);

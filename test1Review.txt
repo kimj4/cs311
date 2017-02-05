@@ -1,0 +1,53 @@
+- Suppose that you have a 3D scene. Somewhere in the scene graph is a mesh,
+   and somewhere in that mesh is a triangle with attributes a, b, c.
+   A multi-step process transforms these vectors into the vectors that are
+   passed to triRender. List the steps in order. For each step, describe its
+   purpose or meaning in a single sentence, using terminology as appropriate.
+
+   - modeling
+   - inverse of camera
+   - ???
+   - ???
+   - ???
+
+
+- Suppose that I'm rendering a 2D triangle with vertices a, b, c. The first two
+   components of these vectors are the screen coordinates. The rasterizing
+   algorithm arrives at a pixel x. What is the algorithm for linearly
+   interpolating a, b, c at x?
+
+   - in words: takes the line from a to b, and the line from a to c, and then
+      does a linear interpolation along the line. ### how is this done?
+
+
+- Suppose that you're using a perspective projection. Describe the viewing
+   volume, as explicitly as you can, in world space, eye space, clipping space,
+   and screen space.
+
+   - 
+
+
+- What is meshRender's specific job? I mean, what does this function do, as
+   opposed to the functions that call it and the functions that it calls? What
+   design trade-offs have we made in meshRender?
+
+
+- In a scene graph, why do we use 3 x 3 (for 2D) or 4 x 4 (for 3D) matrices?
+   Is it possible to implement the scene graph without them?
+
+
+- Because rotations of 3D space are complicated, there are many systems for
+   describing them, with differing strengths. For example, one system is 3 x 3
+   rotation matrices. What is the most time-efficient system, for a graphics
+   application? What is the most memory-efficient system? (This question is
+   difficult, in that we have not explicitly answered it in class. A good
+   strategy for answering such a question is: Tell me what you know that's
+   relevant, omit anything irrelevant, and make a guess.)
+
+
+- What is the point of colorPixel?
+
+
+- Give an example of a scene graph that is not a tree. A good answer will be not
+   just logically correct, but also indicative of why such a thing might be used
+   in a graphics application.

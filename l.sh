@@ -1,1 +1,1 @@
-clang 140mainClipping.c 000pixel.o -lglfw3 -lGL -lm -lXrandr -lXi -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lXcursor -lrt
+clang 160mainDiffuse.c 000pixel.o -lglfw3 -lGL -lm -lXrandr -lXi -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lXcursor -lrt
