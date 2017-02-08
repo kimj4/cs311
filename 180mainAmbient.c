@@ -36,7 +36,7 @@
 #define renVARYWORLDNORMALY 13
 #define renVARYWORLDNORMALZ 14
 
-#define renUNIFDIM 47
+#define renUNIFDIM 50
 #define renUNIFR 0
 #define renUNIFG 1
 #define renUNIFB 2
@@ -54,6 +54,10 @@
 #define renUNIFLIGHTR 44
 #define renUNIFLIGHTG 45
 #define renUNIFLIGHTB 46
+#define renUNIFCAMWORLDX 47
+#define renUNIFCAMWORLDY 48
+#define renUNIFCAMWORLDZ 49
+
 
 #define texNUM 1
 #define renTEXR 0
@@ -97,6 +101,10 @@ void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
         vec3Spherical(rho, unif[renUNIFPHI], unif[renUNIFTHETA], axis);
         mat33AngleAxisRotation(unif[renUNIFALPHA], axis, rotation);
         mat44Isometry(rotation, trans, (double(*)[4])(&unif[renUNIFM]));
+        // write camera world position
+        unif[renUNIFCAMWORLDX]  = axis[0];
+        unif[renUNIFCAMWORLDY]  = axis[1];
+        unif[renUNIFCAMWORLDZ]  = axis[2];
         // copy into the current mesh's unif
         mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
     } else {
@@ -113,6 +121,10 @@ void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
         mat444Multiply((double(*)[4])(&unifParent[renUNIFM]),
                        temp,
                        (double(*)[4])(&unif[renUNIFM]));
+
+       unif[renUNIFCAMWORLDX]  = axis[0];
+       unif[renUNIFCAMWORLDY]  = axis[1];
+       unif[renUNIFCAMWORLDZ]  = axis[2];
         // copy into the current mesh's unif
         mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
     }
@@ -158,7 +170,8 @@ interpolated attribute vector. */
 void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
                 double vary[], double rgbz[]) {
   texSample(tex[0], vary[renVARYS], vary[renVARYT]);
-  // double l[3] = {vary[renVARYWORLDX], vary[renVARYWORLDY], vary[renVARYWORLDZ]};
+
+  // diffuse lighting stuff
   double l[3] ={unif[renUNIFLIGHTX], unif[renUNIFLIGHTY], unif[renUNIFLIGHTZ]};
   double lUnit[3];
   vecUnit(3, l, lUnit);
@@ -170,9 +183,35 @@ void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
   } else {
     diffuseIntensity = dot;
   }
-  rgbz[0] = tex[0]->sample[renTEXR] * diffuseIntensity * unif[renUNIFLIGHTR];
-  rgbz[1] = tex[0]->sample[renTEXG] * diffuseIntensity * unif[renUNIFLIGHTG];
-  rgbz[2] = tex[0]->sample[renTEXB] * diffuseIntensity * unif[renUNIFLIGHTB];
+
+  // specular reflection stuff
+  double camPos[3] = {unif[renUNIFCAMWORLDX], unif[renUNIFCAMWORLDY], unif[renUNIFCAMWORLDZ]};
+  double camPosUnit[3];
+  vecUnit(3, camPos, camPosUnit);
+
+  double temp1[3], r[3];
+  vecScale(3, 2 * dot, n, temp1);
+  vecSubtract(3, temp1, l, r);
+  double specularIntensity;
+  double rDotC = vecDot(3, r, camPosUnit);
+  double shininess = 2;
+  if (rDotC < 0) {
+    specularIntensity = 0;
+  } else {
+    specularIntensity = pow(rDotC, shininess);
+  }
+  double clearCoatRGB[3] = {1.0, 1.0, 1.0};
+  double ambientIntensity = .1;
+
+  rgbz[0] = tex[0]->sample[renTEXR] * ((diffuseIntensity * unif[renUNIFLIGHTR])
+            + (specularIntensity * unif[renUNIFLIGHTR] * clearCoatRGB[0])
+            + (ambientIntensity * unif[renUNIFLIGHTR]));
+  rgbz[1] = tex[0]->sample[renTEXG] * ((diffuseIntensity * unif[renUNIFLIGHTG])
+            + (specularIntensity * unif[renUNIFLIGHTG] * clearCoatRGB[1])
+            + (ambientIntensity * unif[renUNIFLIGHTG]));
+  rgbz[2] = tex[0]->sample[renTEXB] * ((diffuseIntensity * unif[renUNIFLIGHTB])
+            + (specularIntensity * unif[renUNIFLIGHTB] * clearCoatRGB[2])
+            + (ambientIntensity * unif[renUNIFLIGHTB]));
   rgbz[3] = vary[renVARYZ];
 }
 
