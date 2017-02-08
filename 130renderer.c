@@ -79,7 +79,7 @@ void renUpdateViewing(renRenderer *ren) {
                         ren->projection[renPROJF], ren->projection[renPROJN],
                         tempProj);
     } else if (ren->projectionType == renPERSPECTIVE) {
-			printf("perspective matrix creation\n");
+			// printf("perspective matrix creation\n");
       mat44Perspective(ren->projection[renPROJL], ren->projection[renPROJR],
                        ren->projection[renPROJB], ren->projection[renPROJT],
                        ren->projection[renPROJF], ren->projection[renPROJN],

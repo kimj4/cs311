@@ -205,6 +205,7 @@ void meshSmoothNormals(meshMesh *mesh, int n) {
 		a = meshGetVertexPointer(mesh, i);
 		vecCopy(3, normal, &a[n]);
 	}
+
 	/* For each triangle, add onto the normal at each of its vertices. */
 	for (i = 0; i < mesh->triNum; i += 1) {
 		tri = meshGetTrianglePointer(mesh, i);

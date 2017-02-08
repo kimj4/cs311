@@ -15,9 +15,9 @@
 #define renATTRZ 2
 #define renATTRS 3
 #define renATTRT 4
-#define renATTRR 5
-#define renATTRG 6
-#define renATTRB 7
+#define renATTRN 5
+#define renATTRO 6
+#define renATTRP 7
 
 #define renVARYDIM 15
 #define renVARYX 0
@@ -74,7 +74,6 @@
 #include "140mesh.c"
 #include "090scene.c"
 
-
 double unif[renUNIFDIM] = {0};
 renRenderer ren;
 int width = 512;
@@ -83,13 +82,18 @@ double target[3];
 double lookatRho, lookatPhi, lookatTheta;
 texTexture *tex[texNUM];
 sceneNode root;
-
 /* If unifParent is NULL, then sets the uniform matrix to the
 rotation-translation M described by the other uniforms. If unifParent is not
 NULL, but instead contains a rotation-translation P, then sets the uniform
 matrix to the matrix product P * M. */
 void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
-    // OLD from 120
+    // set light source position and colors
+    unif[renUNIFLIGHTX] = 0;
+    unif[renUNIFLIGHTY] = 0;
+    unif[renUNIFLIGHTZ] = 0;
+    unif[renUNIFLIGHTR] = 1.0;
+    unif[renUNIFLIGHTG] = 1.0;
+    unif[renUNIFLIGHTB] = 1.0;
     if (unifParent == NULL) {
         // make a rotation-translation matrix based on unifs
         double rotation[3][3];
@@ -121,17 +125,6 @@ void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
     }
 }
 
-/* Sets rgb, based on the other parameters, which are unaltered. attr is an
-interpolated attribute vector. */
-void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
-                double vary[], double rgbz[]) {
-  texSample(tex[0], vary[renVARYS], vary[renVARYT]);
-  rgbz[0] = tex[0]->sample[renTEXR];
-  rgbz[1] = tex[0]->sample[renTEXG];
-  rgbz[2] = tex[0]->sample[renTEXB];
-  rgbz[3] = vary[renVARYZ];
-}
-
 /* Writes the vary vector, based on the other parameters. */
 void transformVertex(renRenderer *ren, double unif[], double attr[],
         double vary[]) {
@@ -149,8 +142,49 @@ void transformVertex(renRenderer *ren, double unif[], double attr[],
     vary[renVARYW] = homog[3];
     vary[renVARYS] = attr[renATTRS];
     vary[renVARYT] = attr[renATTRT];
+
+    // apply modeling transformations to the vertex points for lighting.
+    double worldHomog[4] = {attr[renATTRX], attr[renATTRY], attr[renATTRZ], 0};
+    double worldNormalHomog[4] = {attr[renATTRN], attr[renATTRO], attr[renATTRP], 0};
+    double worldResult[4], worldNormalResult[4], worldResultUnit[4], worldNormalResultUnit[4];
+    mat441Multiply((double(*)[4])(&unif[renUNIFM]), worldHomog, worldResult);
+    mat441Multiply((double(*)[4])(&unif[renUNIFM]), worldNormalHomog, worldNormalResult);
+    vecUnit(4, worldResult, worldResultUnit);
+    vecUnit(4, worldNormalResult, worldNormalResultUnit);
+
+    vary[renVARYWORLDX] = worldResultUnit[0];
+    vary[renVARYWORLDY] = worldResultUnit[1];
+    vary[renVARYWORLDZ] = worldResultUnit[2];
+    vary[renVARYWORLDNORMALX] = worldNormalResultUnit[0];
+    vary[renVARYWORLDNORMALY] = worldNormalResultUnit[1];
+    vary[renVARYWORLDNORMALZ] = worldNormalResultUnit[2];
+    // vecPrint(3, worldNormalHomog);
 }
 
+/* Sets rgb, based on the other parameters, which are unaltered. attr is an
+interpolated attribute vector. */
+void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
+                double vary[], double rgbz[]) {
+  texSample(tex[0], vary[renVARYS], vary[renVARYT]);
+  double l[3] = {vary[renVARYWORLDX], vary[renVARYWORLDY], vary[renVARYWORLDZ]};
+  double n[3] = {vary[renVARYWORLDNORMALX], vary[renVARYWORLDNORMALY], vary[renVARYWORLDNORMALZ]};
+  double diffuseIntensity;
+  double dot = vecDot(3, l, n);
+  // vecPrint(3, l);
+  // vecPrint(3, n);
+  // printf("%f\n", dot);
+  if (dot < 0) {
+    // printf("diffuse intensity less than 0\n");
+    diffuseIntensity = 0;
+  } else {
+    diffuseIntensity = dot;
+    printf("%f\n", dot);
+  }
+  rgbz[0] = tex[0]->sample[renTEXR] * diffuseIntensity * unif[renUNIFLIGHTR];
+  rgbz[1] = tex[0]->sample[renTEXG] * diffuseIntensity * unif[renUNIFLIGHTG];
+  rgbz[2] = tex[0]->sample[renTEXB] * diffuseIntensity * unif[renUNIFLIGHTB];
+  rgbz[3] = vary[renVARYZ];
+}
 
 void handleTimeStep(double oldTime, double newTime) {
   if (floor(newTime) - floor(oldTime) >= 1.0) {
@@ -158,13 +192,12 @@ void handleTimeStep(double oldTime, double newTime) {
   }
 }
 
-
 /* The arrow keys control xy look at point, and the wasd keys controll the rotation.
     the key mappings are a bit unintuitive for now.*/
 void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
 		int altOptionIsDown, int superCommandIsDown) {
-	printf("key up %d, shift %d, contrwidthol %d, altOpt %d, supComm %d\n",
-		key, shiftIsDown, controlIsDown, altOptionIsDown, superCommandIsDown);
+	// printf("key up %d, shift %d, contrwidthol %d, altOpt %d, supComm %d\n",
+	// 	key, shiftIsDown, controlIsDown, altOptionIsDown, superCommandIsDown);
   switch (key) {
     case 49: {
       lookatRho -= 10;
@@ -218,7 +251,7 @@ void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
     }
   }
   if (key) {
-    printf("aaaa\n" );
+    // printf("aaaa\n" );
     renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
     // renSetFrustum(&ren, renORTHOGRAPHIC, M_PI / 6.0, 10.0, 10.0);
     renSetFrustum(&ren, renPERSPECTIVE, M_PI / 6.0, 10.0, 10.0);
@@ -251,7 +284,7 @@ int main() {
     target[0] = 0.0;
     target[1] = 0.0;
     target[2] = 0.0;
-    lookatRho = 1000.0;
+    lookatRho = 200.0;
     lookatPhi = 0.0;
     lookatTheta = 0.0;
 
@@ -269,7 +302,7 @@ int main() {
 
     unif[renUNIFTRANSX]  = 0;
     unif[renUNIFTRANSY] = 0;
-    unif[renUNIFTRANSZ] = 0;
+    unif[renUNIFTRANSZ] = -100;
     unif[renUNIFALPHA] = 0;
     unif[renUNIFTHETA] = 0;
     unif[renUNIFPHI] = 0;

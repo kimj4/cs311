@@ -14,7 +14,7 @@
 /* calculates vary which contains interpolated values */
 void calculateVary(double alpha[], double beta[], double gamma[], double pq[], double vary[], int varyDim) {
 	double betaMinusAlpha[varyDim], gammaMinusAlpha[varyDim], pBetaMinusAlpha[varyDim],
-		  qGammaMinusAlpha[varyDim], subSum[varyDim], chi[varyDim];
+		  qGammaMinusAlpha[varyDim], subSum[varyDim];
 	vecSubtract(varyDim, beta, alpha, betaMinusAlpha);
 	vecSubtract(varyDim, gamma, alpha, gammaMinusAlpha);
 	vecScale(varyDim, pq[0], betaMinusAlpha, pBetaMinusAlpha);
@@ -75,7 +75,6 @@ int findInverseMatrixMultiplier(double aa[], double bb[], double cc[], double re
 	vecSubtract(2, cc, aa, cMinusA);
 	double leftMatrix[2][2];
 	mat22Columns(bMinusA, cMinusA, leftMatrix);
-	double invLeftMatrix[2][2];
 	return mat22Invert(leftMatrix, result);
 }
 

@@ -121,7 +121,7 @@ void clipRender(renRenderer *ren, double unif[], texTexture *tex[],
 				processVerts(ren, a, newA);
 				processVerts(ren, b, newB);
 				processVerts(ren, c, newC);
-				vecPrint(renVARYDIM, newA);
+				// vecPrint(renVARYDIM, newA);
 				triRender(ren, unif, tex, newA, newB, newC);
 			} else {
 				printf("ERROR: clipRender doesn't know what vertices are clipped\n");
