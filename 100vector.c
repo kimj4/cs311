@@ -75,7 +75,7 @@ double vecDot(int dim, double v[], double w[]) {
 
 /* Returns the length of the dim-dimensional vector v. */
 double vecLength(int dim, double v[]) {
-  double len;
+  double len = 0;
   int i;
   for (i = 0; i < dim; i++) {
     len = len + (v[i] * v[i]);

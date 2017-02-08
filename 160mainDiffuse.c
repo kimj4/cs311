@@ -87,13 +87,6 @@ rotation-translation M described by the other uniforms. If unifParent is not
 NULL, but instead contains a rotation-translation P, then sets the uniform
 matrix to the matrix product P * M. */
 void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
-    // set light source position and colors
-    unif[renUNIFLIGHTX] = 0;
-    unif[renUNIFLIGHTY] = 0;
-    unif[renUNIFLIGHTZ] = 0;
-    unif[renUNIFLIGHTR] = 1.0;
-    unif[renUNIFLIGHTG] = 1.0;
-    unif[renUNIFLIGHTB] = 1.0;
     if (unifParent == NULL) {
         // make a rotation-translation matrix based on unifs
         double rotation[3][3];
@@ -149,8 +142,9 @@ void transformVertex(renRenderer *ren, double unif[], double attr[],
     double worldResult[4], worldNormalResult[4], worldResultUnit[4], worldNormalResultUnit[4];
     mat441Multiply((double(*)[4])(&unif[renUNIFM]), worldHomog, worldResult);
     mat441Multiply((double(*)[4])(&unif[renUNIFM]), worldNormalHomog, worldNormalResult);
-    vecUnit(4, worldResult, worldResultUnit);
-    vecUnit(4, worldNormalResult, worldNormalResultUnit);
+    vecUnit(3, worldResult, worldResultUnit);
+    // vecPrint(4, worldResult);
+    vecUnit(3, worldNormalResult, worldNormalResultUnit);
 
     vary[renVARYWORLDX] = worldResultUnit[0];
     vary[renVARYWORLDY] = worldResultUnit[1];
@@ -166,10 +160,13 @@ interpolated attribute vector. */
 void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
                 double vary[], double rgbz[]) {
   texSample(tex[0], vary[renVARYS], vary[renVARYT]);
-  double l[3] = {vary[renVARYWORLDX], vary[renVARYWORLDY], vary[renVARYWORLDZ]};
+  // double l[3] = {vary[renVARYWORLDX], vary[renVARYWORLDY], vary[renVARYWORLDZ]};
+  double l[3] ={unif[renUNIFLIGHTX], unif[renUNIFLIGHTY], unif[renUNIFLIGHTZ]};
+  double lUnit[3];
+  vecUnit(3, l, lUnit);
   double n[3] = {vary[renVARYWORLDNORMALX], vary[renVARYWORLDNORMALY], vary[renVARYWORLDNORMALZ]};
   double diffuseIntensity;
-  double dot = vecDot(3, l, n);
+  double dot = vecDot(3, lUnit, n);
   // vecPrint(3, l);
   // vecPrint(3, n);
   // printf("%f\n", dot);
@@ -178,7 +175,7 @@ void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
     diffuseIntensity = 0;
   } else {
     diffuseIntensity = dot;
-    printf("%f\n", dot);
+    // printf("%f\n", dot);
   }
   rgbz[0] = tex[0]->sample[renTEXR] * diffuseIntensity * unif[renUNIFLIGHTR];
   rgbz[1] = tex[0]->sample[renTEXG] * diffuseIntensity * unif[renUNIFLIGHTG];
@@ -225,7 +222,7 @@ void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
       break;
     }
     case 68: { // d
-      lookatTheta -= .1;
+      lookatTheta += .1;
       renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
@@ -235,6 +232,7 @@ void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
       break;
     }
     case 263: { // leftarrow
+      // target[1] = target[1] + 10;
       target[0] = target[0] - 10;
       renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
@@ -251,7 +249,6 @@ void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
     }
   }
   if (key) {
-    // printf("aaaa\n" );
     renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
     // renSetFrustum(&ren, renORTHOGRAPHIC, M_PI / 6.0, 10.0, 10.0);
     renSetFrustum(&ren, renPERSPECTIVE, M_PI / 6.0, 10.0, 10.0);
@@ -284,9 +281,24 @@ int main() {
     target[0] = 0.0;
     target[1] = 0.0;
     target[2] = 0.0;
-    lookatRho = 200.0;
+    lookatRho = 1000.0;
     lookatPhi = 0.0;
     lookatTheta = 0.0;
+
+    // modeling parameters
+    unif[renUNIFTRANSX]  = 0;
+    unif[renUNIFTRANSY] = 0;
+    unif[renUNIFTRANSZ] = 0;
+    unif[renUNIFALPHA] = 0;
+    unif[renUNIFTHETA] = 0;
+    unif[renUNIFPHI] = 0;
+    // lighting parameters
+    unif[renUNIFLIGHTX] = 100;
+    unif[renUNIFLIGHTY] = 0;
+    unif[renUNIFLIGHTZ] = 0;
+    unif[renUNIFLIGHTR] = 1.0;
+    unif[renUNIFLIGHTG] = 1.0;
+    unif[renUNIFLIGHTB] = 1.0;
 
     renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
     renUpdateViewing(&ren);
@@ -300,14 +312,8 @@ int main() {
     texSetLeftRight(&tex1, texREPEAT);
     tex[0] = &tex1;
 
-    unif[renUNIFTRANSX]  = 0;
-    unif[renUNIFTRANSY] = 0;
-    unif[renUNIFTRANSZ] = -100;
-    unif[renUNIFALPHA] = 0;
-    unif[renUNIFTHETA] = 0;
-    unif[renUNIFPHI] = 0;
 
-    // initialize some meshes
+        // initialize some meshes
     meshMesh mesh1;
     meshInitializeSphere(&mesh1, 150, 20, 40);
     // meshInitializeBox(&mesh1, 0, 100, 0, 100, 0, 100);
