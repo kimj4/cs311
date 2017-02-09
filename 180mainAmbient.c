@@ -98,15 +98,20 @@ void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
         double axis[3];
         double trans[3] = {unif[renUNIFTRANSX], unif[renUNIFTRANSY], unif[renUNIFTRANSZ]};
 
+
         vec3Spherical(rho, unif[renUNIFPHI], unif[renUNIFTHETA], axis);
         mat33AngleAxisRotation(unif[renUNIFALPHA], axis, rotation);
         mat44Isometry(rotation, trans, (double(*)[4])(&unif[renUNIFM]));
         // write camera world position
-        unif[renUNIFCAMWORLDX]  = axis[0];
-        unif[renUNIFCAMWORLDY]  = axis[1];
-        unif[renUNIFCAMWORLDZ]  = axis[2];
+        // unif[renUNIFCAMWORLDX]  = axis[0];
+        // unif[renUNIFCAMWORLDY]  = axis[1];
+        // unif[renUNIFCAMWORLDZ]  = axis[2];
+        // vecPrint(3, axis);
         // copy into the current mesh's unif
         mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
+        unif[renUNIFCAMWORLDX] = ren->viewing[0][3];
+        unif[renUNIFCAMWORLDY] = ren->viewing[1][3];
+        unif[renUNIFCAMWORLDZ] = ren->viewing[2][3];
     } else {
         // make a rotation-translation matrix based on unifs
         double rotation[3][3];
@@ -194,11 +199,15 @@ void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
   vecSubtract(3, temp1, l, r);
   double specularIntensity;
   double rDotC = vecDot(3, r, camPosUnit);
-  double shininess = 2;
+  double shininess = 10;
   if (rDotC < 0) {
     specularIntensity = 0;
   } else {
-    specularIntensity = pow(rDotC, shininess);
+    if (dot < 0) {
+      specularIntensity = 0;
+    } else {
+      specularIntensity = pow(rDotC, shininess);
+    }
   }
   double clearCoatRGB[3] = {1.0, 1.0, 1.0};
   double ambientIntensity = .1;
