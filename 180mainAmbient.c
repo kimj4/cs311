@@ -1,9 +1,9 @@
 /*
- * 140mainClipping.c
+ * 180mainAmbient.c
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * main program to test clipping
+ * main program to implement ambient lighting
  */
 
 #define renVARYDIMBOUND 40
@@ -94,24 +94,18 @@ void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
     if (unifParent == NULL) {
         // make a rotation-translation matrix based on unifs
         double rotation[3][3];
-        double rho = lookatRho;
-        double axis[3];
         double trans[3] = {unif[renUNIFTRANSX], unif[renUNIFTRANSY], unif[renUNIFTRANSZ]};
+        double axis[3] = {0.0, 0.0, 1.0};
 
-
-        vec3Spherical(rho, unif[renUNIFPHI], unif[renUNIFTHETA], axis);
+        vec3Spherical(1.0, unif[renUNIFPHI], unif[renUNIFTHETA], axis);
         mat33AngleAxisRotation(unif[renUNIFALPHA], axis, rotation);
         mat44Isometry(rotation, trans, (double(*)[4])(&unif[renUNIFM]));
         // write camera world position
-        // unif[renUNIFCAMWORLDX]  = axis[0];
-        // unif[renUNIFCAMWORLDY]  = axis[1];
-        // unif[renUNIFCAMWORLDZ]  = axis[2];
-        // vecPrint(3, axis);
+        unif[renUNIFCAMWORLDX]  = axis[0];
+        unif[renUNIFCAMWORLDY]  = axis[1];
+        unif[renUNIFCAMWORLDZ]  = axis[2];
         // copy into the current mesh's unif
         mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
-        unif[renUNIFCAMWORLDX] = ren->viewing[0][3];
-        unif[renUNIFCAMWORLDY] = ren->viewing[1][3];
-        unif[renUNIFCAMWORLDZ] = ren->viewing[2][3];
     } else {
         // make a rotation-translation matrix based on unifs
         double rotation[3][3];
@@ -230,74 +224,93 @@ void handleTimeStep(double oldTime, double newTime) {
   }
 }
 
+void draw(void) {
+  pixClearRGB(0, 0, 0);
+  depthClearZs(ren.depth, -999999999);
+  renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
+  // renSetFrustum(&ren, renORTHOGRAPHIC, M_PI / 6.0, 10.0, 10.0);
+  renSetFrustum(&ren, renPERSPECTIVE, M_PI / 6.0, lookatRho, 10.0);
+  renUpdateViewing(&ren);
+  sceneSetUniform(&root, &ren, unif);
+  sceneRender(&root, &ren, NULL);
+}
+
 /* The arrow keys control xy look at point, and the wasd keys controll the rotation.
     the key mappings are a bit unintuitive for now.*/
 void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
 		int altOptionIsDown, int superCommandIsDown) {
-	// printf("key up %d, shift %d, contrwidthol %d, altOpt %d, supComm %d\n",
-	// 	key, shiftIsDown, controlIsDown, altOptionIsDown, superCommandIsDown);
+	printf("key up %d, shift %d, contrwidthol %d, altOpt %d, supComm %d\n",
+		key, shiftIsDown, controlIsDown, altOptionIsDown, superCommandIsDown);
   switch (key) {
-    case 49: {
+    case 49: { //1
       lookatRho -= 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
-    case 50: {
+    case 50: { //2
       lookatRho += 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
+      break;
+    }
+    case 51: { //3
+      unif[renUNIFALPHA] += .001;
+      break;
+    }
+    case 52: { //4
+      unif[renUNIFALPHA] -= .001;
+      break;
+    }
+    case 53: { //5
+      unif[renUNIFPHI] += .001;
+      break;
+    }
+    case 54: { //6
+      unif[renUNIFPHI] -= .001;
+      break;
+    }
+    case 55: { //7
+      unif[renUNIFTHETA] += .01;
+      break;
+    }
+    case 56: { //8
+      unif[renUNIFTHETA] -= .01;
       break;
     }
     case 87: { // w
       lookatPhi += .1;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 83: { // s
       lookatPhi -= .1;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 65: { // a
       lookatTheta -= .1;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 68: { // d
       lookatTheta += .1;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 262: { // rightarrow
       target[0] = target[0] + 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 263: { // leftarrow
       // target[1] = target[1] + 10;
       target[0] = target[0] - 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 264: { // downarrow
       target[1] = target[1] - 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 265: { // uparrow
       target[1] = target[1] + 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
   }
   if (key) {
-    renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
-    // renSetFrustum(&ren, renORTHOGRAPHIC, M_PI / 6.0, 10.0, 10.0);
-    renSetFrustum(&ren, renPERSPECTIVE, M_PI / 6.0, 10.0, 10.0);
-    renUpdateViewing(&ren);
-    pixClearRGB(0, 0, 0);
-    depthClearZs(ren.depth, -999999999);
-    sceneSetUniform(&root, &ren, unif);
-    sceneRender(&root, &ren, NULL);
+    draw();
+
   }
 
 }

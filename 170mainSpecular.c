@@ -1,9 +1,9 @@
 /*
- * 140mainClipping.c
+ * 170mainSpecular.c
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * main program to test clipping
+ * main program to implement specular reflection
  */
 
 #define renVARYDIMBOUND 40

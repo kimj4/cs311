@@ -1,9 +1,9 @@
 /*
- * 140mainClipping.c
+ * 160mainDiffuse.c
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * main program to test clipping
+ * main program to implement diffuse lighting
  */
 
 #define renVARYDIMBOUND 40
