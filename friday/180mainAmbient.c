@@ -1,9 +1,9 @@
 /*
- * 160mainDiffuse.c
+ * 180mainAmbient.c
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * main program to implement diffuse lighting
+ * main program to implement ambient lighting
  */
 
 #define renVARYDIMBOUND 40
@@ -36,7 +36,7 @@
 #define renVARYWORLDNORMALY 13
 #define renVARYWORLDNORMALZ 14
 
-#define renUNIFDIM 47
+#define renUNIFDIM 50
 #define renUNIFR 0
 #define renUNIFG 1
 #define renUNIFB 2
@@ -54,6 +54,10 @@
 #define renUNIFLIGHTR 44
 #define renUNIFLIGHTG 45
 #define renUNIFLIGHTB 46
+#define renUNIFCAMWORLDX 47
+#define renUNIFCAMWORLDY 48
+#define renUNIFCAMWORLDZ 49
+
 
 #define texNUM 1
 #define renTEXR 0
@@ -82,32 +86,47 @@ double target[3];
 double lookatRho, lookatPhi, lookatTheta;
 texTexture *tex[texNUM];
 sceneNode root;
-
 /* If unifParent is NULL, then sets the uniform matrix to the
 rotation-translation M described by the other uniforms. If unifParent is not
 NULL, but instead contains a rotation-translation P, then sets the uniform
 matrix to the matrix product P * M. */
 void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
-    double trans[3] = {unif[renUNIFTRANSX], unif[renUNIFTRANSY], unif[renUNIFTRANSZ]};
-    double axis[3] = {0.0, 0.0, 1.0};
-    double rotation[3][3];
-    vec3Spherical(1.0, unif[renUNIFPHI], unif[renUNIFTHETA], axis);
-    mat33AngleAxisRotation(unif[renUNIFALPHA], axis, rotation);
-    // copy into the current mesh's unif
-    mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
     if (unifParent == NULL) {
         // make a rotation-translation matrix based on unifs
+        double rotation[3][3];
+        double trans[3] = {unif[renUNIFTRANSX], unif[renUNIFTRANSY], unif[renUNIFTRANSZ]};
+        double axis[3] = {0.0, 0.0, 1.0};
+
+        vec3Spherical(1.0, unif[renUNIFPHI], unif[renUNIFTHETA], axis);
+        mat33AngleAxisRotation(unif[renUNIFALPHA], axis, rotation);
         mat44Isometry(rotation, trans, (double(*)[4])(&unif[renUNIFM]));
+        // write camera world position
+        unif[renUNIFCAMWORLDX]  = axis[0];
+        unif[renUNIFCAMWORLDY]  = axis[1];
+        unif[renUNIFCAMWORLDZ]  = axis[2];
+        // copy into the current mesh's unif
+        mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
     } else {
         // make a rotation-translation matrix based on unifs
+        double rotation[3][3];
+        double rho = 1;
+        double axis[3];
+        vec3Spherical(rho, unif[renUNIFPHI], unif[renUNIFTHETA], axis);
+        mat33AngleAxisRotation(unif[renUNIFALPHA], axis, rotation);
+        double trans[3] = {unif[renUNIFTRANSX], unif[renUNIFTRANSY], unif[renUNIFTRANSZ]};
         double temp[4][4];
         mat44Isometry(rotation, trans, temp);
         // multiply with the existing rotation-translation matrix from the parent
         mat444Multiply((double(*)[4])(&unifParent[renUNIFM]),
                        temp,
                        (double(*)[4])(&unif[renUNIFM]));
-    }
 
+       unif[renUNIFCAMWORLDX]  = axis[0];
+       unif[renUNIFCAMWORLDY]  = axis[1];
+       unif[renUNIFCAMWORLDZ]  = axis[2];
+        // copy into the current mesh's unif
+        mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
+    }
 }
 
 /* Writes the vary vector, based on the other parameters. */
@@ -150,7 +169,8 @@ interpolated attribute vector. */
 void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
                 double vary[], double rgbz[]) {
   texSample(tex[0], vary[renVARYS], vary[renVARYT]);
-  // double l[3] = {vary[renVARYWORLDX], vary[renVARYWORLDY], vary[renVARYWORLDZ]};
+
+  // diffuse lighting stuff
   double l[3] ={unif[renUNIFLIGHTX], unif[renUNIFLIGHTY], unif[renUNIFLIGHTZ]};
   double lUnit[3];
   vecUnit(3, l, lUnit);
@@ -162,9 +182,39 @@ void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
   } else {
     diffuseIntensity = dot;
   }
-  rgbz[0] = tex[0]->sample[renTEXR] * diffuseIntensity * unif[renUNIFLIGHTR];
-  rgbz[1] = tex[0]->sample[renTEXG] * diffuseIntensity * unif[renUNIFLIGHTG];
-  rgbz[2] = tex[0]->sample[renTEXB] * diffuseIntensity * unif[renUNIFLIGHTB];
+
+  // specular reflection stuff
+  double camPos[3] = {unif[renUNIFCAMWORLDX], unif[renUNIFCAMWORLDY], unif[renUNIFCAMWORLDZ]};
+  double camPosUnit[3];
+  vecUnit(3, camPos, camPosUnit);
+
+  double temp1[3], r[3];
+  vecScale(3, 2 * dot, n, temp1);
+  vecSubtract(3, temp1, l, r);
+  double specularIntensity;
+  double rDotC = vecDot(3, r, camPosUnit);
+  double shininess = 10;
+  if (rDotC < 0) {
+    specularIntensity = 0;
+  } else {
+    if (dot < 0) {
+      specularIntensity = 0;
+    } else {
+      specularIntensity = pow(rDotC, shininess);
+    }
+  }
+  double clearCoatRGB[3] = {1.0, 1.0, 1.0};
+  double ambientIntensity = .1;
+
+  rgbz[0] = tex[0]->sample[renTEXR] * ((diffuseIntensity * unif[renUNIFLIGHTR])
+            + (specularIntensity * unif[renUNIFLIGHTR] * clearCoatRGB[0])
+            + (ambientIntensity * unif[renUNIFLIGHTR]));
+  rgbz[1] = tex[0]->sample[renTEXG] * ((diffuseIntensity * unif[renUNIFLIGHTG])
+            + (specularIntensity * unif[renUNIFLIGHTG] * clearCoatRGB[1])
+            + (ambientIntensity * unif[renUNIFLIGHTG]));
+  rgbz[2] = tex[0]->sample[renTEXB] * ((diffuseIntensity * unif[renUNIFLIGHTB])
+            + (specularIntensity * unif[renUNIFLIGHTB] * clearCoatRGB[2])
+            + (ambientIntensity * unif[renUNIFLIGHTB]));
   rgbz[3] = vary[renVARYZ];
 }
 
@@ -174,74 +224,93 @@ void handleTimeStep(double oldTime, double newTime) {
   }
 }
 
+void draw(void) {
+  pixClearRGB(0, 0, 0);
+  depthClearZs(ren.depth, -999999999);
+  renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
+  // renSetFrustum(&ren, renORTHOGRAPHIC, M_PI / 6.0, 10.0, 10.0);
+  renSetFrustum(&ren, renPERSPECTIVE, M_PI / 6.0, lookatRho, 10.0);
+  renUpdateViewing(&ren);
+  sceneSetUniform(&root, &ren, unif);
+  sceneRender(&root, &ren, NULL);
+}
+
 /* The arrow keys control xy look at point, and the wasd keys controll the rotation.
     the key mappings are a bit unintuitive for now.*/
 void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
 		int altOptionIsDown, int superCommandIsDown) {
-	// printf("key up %d, shift %d, contrwidthol %d, altOpt %d, supComm %d\n",
-	// 	key, shiftIsDown, controlIsDown, altOptionIsDown, superCommandIsDown);
+	printf("key up %d, shift %d, contrwidthol %d, altOpt %d, supComm %d\n",
+		key, shiftIsDown, controlIsDown, altOptionIsDown, superCommandIsDown);
   switch (key) {
-    case 49: {
+    case 49: { //1
       lookatRho -= 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
-    case 50: {
+    case 50: { //2
       lookatRho += 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
+      break;
+    }
+    case 51: { //3
+      unif[renUNIFALPHA] += .001;
+      break;
+    }
+    case 52: { //4
+      unif[renUNIFALPHA] -= .001;
+      break;
+    }
+    case 53: { //5
+      unif[renUNIFPHI] += .001;
+      break;
+    }
+    case 54: { //6
+      unif[renUNIFPHI] -= .001;
+      break;
+    }
+    case 55: { //7
+      unif[renUNIFTHETA] += .01;
+      break;
+    }
+    case 56: { //8
+      unif[renUNIFTHETA] -= .01;
       break;
     }
     case 87: { // w
       lookatPhi += .1;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 83: { // s
       lookatPhi -= .1;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 65: { // a
       lookatTheta -= .1;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 68: { // d
       lookatTheta += .1;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 262: { // rightarrow
       target[0] = target[0] + 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 263: { // leftarrow
       // target[1] = target[1] + 10;
       target[0] = target[0] - 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 264: { // downarrow
       target[1] = target[1] - 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
     case 265: { // uparrow
       target[1] = target[1] + 10;
-      renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
       break;
     }
   }
   if (key) {
-    renLookAt(&ren, target, lookatRho, lookatPhi, lookatTheta);
-    // renSetFrustum(&ren, renORTHOGRAPHIC, M_PI / 6.0, 10.0, 10.0);
-    renSetFrustum(&ren, renPERSPECTIVE, M_PI / 6.0, 10.0, 10.0);
-    renUpdateViewing(&ren);
-    pixClearRGB(0, 0, 0);
-    depthClearZs(ren.depth, -999999999);
-    sceneSetUniform(&root, &ren, unif);
-    sceneRender(&root, &ren, NULL);
+    draw();
+
   }
 
 }

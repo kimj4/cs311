@@ -1,6 +1,3 @@
-
-
-
 /*** Creating and destroying ***/
 
 /* Feel free to read the struct's members, but don't write them, except through
@@ -104,7 +101,7 @@ void meshRender(meshMesh *mesh, renRenderer *ren, double unif[],
 
 		for (i = 0; i < mesh->triNum; i += 1) {
 			tri = meshGetTrianglePointer(mesh, i);
-			triRender(ren, unif, tex,
+			clipRender(ren, unif, tex,
 				meshGetTransformedVertexPointer(mesh, ren, tri[0]),
 				meshGetTransformedVertexPointer(mesh, ren, tri[1]),
 				meshGetTransformedVertexPointer(mesh, ren, tri[2]));
@@ -208,6 +205,7 @@ void meshSmoothNormals(meshMesh *mesh, int n) {
 		a = meshGetVertexPointer(mesh, i);
 		vecCopy(3, normal, &a[n]);
 	}
+
 	/* For each triangle, add onto the normal at each of its vertices. */
 	for (i = 0; i < mesh->triNum; i += 1) {
 		tri = meshGetTrianglePointer(mesh, i);

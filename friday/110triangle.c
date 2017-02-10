@@ -14,7 +14,7 @@
 /* calculates vary which contains interpolated values */
 void calculateVary(double alpha[], double beta[], double gamma[], double pq[], double vary[], int varyDim) {
 	double betaMinusAlpha[varyDim], gammaMinusAlpha[varyDim], pBetaMinusAlpha[varyDim],
-		  qGammaMinusAlpha[varyDim], subSum[varyDim], chi[varyDim];
+		  qGammaMinusAlpha[varyDim], subSum[varyDim];
 	vecSubtract(varyDim, beta, alpha, betaMinusAlpha);
 	vecSubtract(varyDim, gamma, alpha, gammaMinusAlpha);
 	vecScale(varyDim, pq[0], betaMinusAlpha, pBetaMinusAlpha);
@@ -38,10 +38,10 @@ int findLeftmost(double *posArray[3]) {
 		if (aaPos == -1) {
 			aaPos = i;
 		} else {
-			if (posArray[aaPos][0] > posArray[i][0]) {
+			if (posArray[aaPos][renVARYX] > posArray[i][renVARYX]) {
 				aaPos = i;
-			} else if (posArray[aaPos][0] == posArray[i][0]) {
-				if (posArray[aaPos][1] > posArray[i][1])
+			} else if (posArray[aaPos][renVARYX] == posArray[i][renVARYX]) {
+				if (posArray[aaPos][renVARYY] > posArray[i][renVARYY])
 					aaPos = i;
 			}
 		}
@@ -75,7 +75,6 @@ int findInverseMatrixMultiplier(double aa[], double bb[], double cc[], double re
 	vecSubtract(2, cc, aa, cMinusA);
 	double leftMatrix[2][2];
 	mat22Columns(bMinusA, cMinusA, leftMatrix);
-	double invLeftMatrix[2][2];
 	return mat22Invert(leftMatrix, result);
 }
 
@@ -83,6 +82,7 @@ int findInverseMatrixMultiplier(double aa[], double bb[], double cc[], double re
    that color. */
 void interpolateAndSet(renRenderer *ren, double unif[], texTexture *tex[], double x[],
 	double aa[], double bb[], double cc[], double pq[], double invLeftMatrix[2][2]) {
+	// printf("top of interpolateAndSet\n");
 	double xMinusA[renVARYDIMBOUND], newRGBZ[4], vary[renVARYDIMBOUND];
 	vecSubtract(2, x, aa, xMinusA);
 	calculatePQ(invLeftMatrix, xMinusA, pq);
@@ -94,6 +94,8 @@ void interpolateAndSet(renRenderer *ren, double unif[], texTexture *tex[], doubl
     depthSetZ(ren->depth, (int)x[0], (int)x[1], newRGBZ[3]);
     pixSetRGB(x[0], x[1], newRGBZ[0], newRGBZ[1], newRGBZ[2]);
   }
+	// printf("x: (%f, %f)\n", x[0], x[1]);
+	// printf("bottom of interpolateAndSet\n");
 }
 
 /* refactored version of calculating the veritcal value from the horizontal value and given
@@ -107,7 +109,8 @@ double calcSlopePoint(double x[], double final[], double initial[]) {
 void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	double a[], double b[], double c[]) {
 
-
+	// printf("a:(%f, %f)\n", a[0], a[1]);
+	// printf("triRender top\n");
 	double *posArray[3] = {a, b, c};
 	int aaPos, bbPos, ccPos;
 	aaPos = findLeftmost(posArray);
@@ -119,58 +122,92 @@ void triRender(renRenderer *ren, double unif[], texTexture *tex[],
 	// calculate constants
 	double invLeftMatrix[2][2];
 	if (findInverseMatrixMultiplier(aa, bb, cc, invLeftMatrix) < 0) {
+		// printf("backface\n");
 		return; // backface culling
 	} else {
+		// printf("triangles are being rendered\n");
 		// rasterize
 		double x1low, x1high, x[2], pq[2];
 		// special case handling for vertical line
 		if ((aa[0] == bb[0]) && (bb[0] == cc[0])) {
-			x[0] = aa[0];
-			for (x[1] = ceil(aa[1]); x[1] <= floor(cc[1]); x[1]++) {
+			x[0] = aa[renVARYX];
+			for (x[1] = ceil(aa[renVARYY]); x[1] <= floor(cc[renVARYY]); x[1]++) {
 				interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
 			}
 		}
 		// base of the triangle is the bottom-most edge
-		else if ((bb[0] > cc[0]) || (aa[0] == cc[0]) || (bb[0] == cc[0])) {
+		else if ((bb[renVARYX] > cc[renVARYX]) || (aa[renVARYX] == cc[renVARYX]) || (bb[renVARYX] == cc[renVARYX])) {
 			// printf("first else\n");
 			// printf("before first forloop\n");
-			for (x[0] = ceil(aa[0]); x[0] <= floor(cc[0]); x[0]++) {
-				x1low = calcSlopePoint(x, bb, aa);
-				x1high = calcSlopePoint(x, cc, aa);
-				for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
-					interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+			for (x[0] = ceil(aa[renVARYX]); x[0] <= floor(cc[renVARYX]); x[0]++) {
+				if (x[0] > ren->depth->width - 1 || x[0] < 0) {
+
+				} else {
+					x1low = calcSlopePoint(x, bb, aa);
+					x1high = calcSlopePoint(x, cc, aa);
+					for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
+						if (x[1] > ren->depth->height - 1 || x[1] < 0) {
+							// break;
+						} else {
+							interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+						}
+					}
 				}
 			}
-			// printf("before first forloop\n");
-			for (x[0] = ceil(cc[0]); x[0] <= floor(bb[0]); x[0]++) {
-				x1low = calcSlopePoint(x, bb, aa);
-				x1high = calcSlopePoint(x, bb, cc);
-				for (x[1] = ceil(x1low); x[1]<= floor(x1high); x[1]++) {
-					interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+			// printf("before second forloop\n");
+			for (x[0] = ceil(cc[renVARYX]); x[0] <= floor(bb[renVARYX]); x[0]++) {
+				if (x[0] > ren->depth->width - 1 || x[0] < 0) {
+					// break;
+				} else {
+					x1low = calcSlopePoint(x, bb, aa);
+					x1high = calcSlopePoint(x, bb, cc);
+					for (x[1] = ceil(x1low); x[1]<= floor(x1high); x[1]++) {
+						if (x[1] > ren->depth->height - 1 || x[1] < 0) {
+							// break;
+						} else {
+							interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+						}
+					}
 				}
 			}
 			// printf("after second forloop\n");
 		} else {
 			// printf("second else\n");
-		  for (x[0] = ceil(aa[0]); x[0] <= floor(bb[0]); x[0]++) {
-		    x1low = calcSlopePoint(x, bb, aa);
-		    x1high = calcSlopePoint(x, cc, aa);
-		    if ((ceil(aa[0]) == floor(cc[0]))) {
-					// todo: see if this case needs to be handled
-		      // break;
-		    } else {
-		      for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
-		        interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
-		      }
-		    }
+		  for (x[0] = ceil(aa[renVARYX]); x[0] <= floor(bb[renVARYX]); x[0]++) {
+				if (x[0] > ren->depth->width - 1 || x[0] < 0) {
+					// break;
+				} else {
+			    x1low = calcSlopePoint(x, bb, aa);
+			    x1high = calcSlopePoint(x, cc, aa);
+			    if ((ceil(aa[renVARYX]) == floor(cc[renVARYX]))) {
+						// todo: see if this case needs to be handled
+			      // break;
+			    } else {
+			      for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
+							if (x[1] > ren->depth->height - 1 || x[1] < 0) {
+								// break;
+							} else {
+			        	interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+							}
+			      }
+			    }
+				}
 		  }
 			// printf("after first forloop\n");
-		  for (x[0] = ceil(bb[0]); x[0] <= floor(cc[0]); x[0]++) {
-		    x1low = calcSlopePoint(x, cc, bb);
-		    x1high = calcSlopePoint(x, cc, aa);
-		    for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
-		      interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
-		    }
+		  for (x[0] = ceil(bb[renVARYX]); x[0] <= floor(cc[renVARYX]); x[0]++) {
+				if (x[0] > ren->depth->width - 1 || x[0] < 0) {
+					// break;
+				} else {
+			    x1low = calcSlopePoint(x, cc, bb);
+			    x1high = calcSlopePoint(x, cc, aa);
+			    for (x[1] = ceil(x1low); x[1] <= floor(x1high); x[1]++) {
+						if (x[1] > ren->depth->height - 1 || x[1] < 0) {
+							// break;
+						} else {
+			      	interpolateAndSet(ren, unif, tex, x, aa, bb, cc, pq, invLeftMatrix);
+						}
+			    }
+				}
 		  }
 			// printf("after second forloop\n");
 		}
