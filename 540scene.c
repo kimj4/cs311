@@ -10,16 +10,22 @@ struct sceneNode {
 	GLdouble *unif;
 	meshGLMesh *meshGL;
 	sceneNode *firstChild, *nextSibling;
+  GLint texNum;
+  texTexture **tex;
+  GLint textureLocs[];
 };
 
 /* Initializes a sceneNode struct. The translation and rotation are initialized to trivial values. The user must remember to call sceneDestroy or
 sceneDestroyRecursively when finished. Returns 0 if no error occurred. */
-int sceneInitialize(sceneNode *node, GLuint unifDim, meshGLMesh *mesh,
-		sceneNode *firstChild, sceneNode *nextSibling) {
-	node->unif = (GLdouble *)malloc(unifDim * sizeof(GLdouble));
-	if (node->unif == NULL)
-		return 1;
-	mat33Identity(node->rotation);
+int sceneInitialize(sceneNode *node, GLuint unifDim, GLuint texNum,
+      meshGLMesh *mesh, sceneNode *firstChild, sceneNode *nextSibling) {
+  node->unif = (GLdouble *)malloc(unifDim * sizeof(GLdouble) +
+      texNum * sizeof(texTexture *));
+  if (node->unif == NULL)
+      return 1;
+  node->tex = (texTexture **)&(node->unif[unifDim]);
+  node->texNum = texNum;
+  mat33Identity(node->rotation);
 	vecSet(3, node->translation, 0.0, 0.0, 0.0);
 	node->unifDim = unifDim;
 	node->meshGL = mesh;
@@ -127,8 +133,15 @@ void sceneRemoveChild(sceneNode *node, sceneNode *child) {
 		sceneRemoveSibling(node->firstChild, child);
 }
 
+/* Sets the list of textures to the given one*/
+void sceneSetTexture(sceneNode *node, texTexture *tex[]) {
+    node->tex = tex;
+}
 
-
+/* Sets the index-th texture in the texture list to the given new texture*/
+void sceneSetOneTexutre(sceneNode *node, int index, texTexture tex) {
+    node->tex[index] = tex;
+}
 /*** OpenGL ***/
 
 
