@@ -159,50 +159,56 @@ void sceneRender(sceneNode *node, GLdouble parent[4][4], GLint modelingLoc,
 		GLint textureLocs[]) {
 	int i;
 	// render the textures
-	for (i = 0; i < node->texNum; i++) {
-		switch(i) {
-			case(0): {
-				texRender(node->tex[i], GL_TEXTURE0, i, textureLocs[i]);
-				break;
-			}
-			case(1): {
-				texRender(node->tex[i], GL_TEXTURE1, i, textureLocs[i]);
-				break;
-			}
-			case(2): {
-				texRender(node->tex[i], GL_TEXTURE2, i, textureLocs[i]);
-				break;
-			}
-			case(3): {
-				texRender(node->tex[i], GL_TEXTURE3, i, textureLocs[i]);
-				break;
-			}
-			case(4): {
-				texRender(node->tex[i], GL_TEXTURE4, i, textureLocs[i]);
-				break;
-			}
-			case(5): {
-				texRender(node->tex[i], GL_TEXTURE5, i, textureLocs[i]);
-				break;
-			}
-			case(6): {
-				texRender(node->tex[i], GL_TEXTURE6, i, textureLocs[i]);
-				break;
-			}
-			case(7): {
-				texRender(node->tex[i], GL_TEXTURE7, i, textureLocs[i]);
-				break;
-			}
-			default: {
-				printf("Scene Error: there are more than 8 textures.\n");
-				break;
-			}
-		}
-	}
+	// for (i = 0; i < node->texNum; i++) {
+	// 	switch(i) {
+	// 		case(0): {
+	// 			printf("%i\n", textureLocs[i]);
+	// 			if (textureLocs[i] != -1) {
+	// 				printf("%i\n", node->tex[i]->width);
+	// 				texRender(node->tex[i], GL_TEXTURE0, i, textureLocs[i]);
+	// 				printf("here\n");
+	// 			}
+	// 			break;
+	// 		}
+	// 		case(1): {
+	// 			texRender(node->tex[i], GL_TEXTURE1, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(2): {
+	// 			texRender(node->tex[i], GL_TEXTURE2, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(3): {
+	// 			texRender(node->tex[i], GL_TEXTURE3, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(4): {
+	// 			texRender(node->tex[i], GL_TEXTURE4, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(5): {
+	// 			texRender(node->tex[i], GL_TEXTURE5, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(6): {
+	// 			texRender(node->tex[i], GL_TEXTURE6, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(7): {
+	// 			texRender(node->tex[i], GL_TEXTURE7, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		default: {
+	// 			printf("Scene Error: there are more than 8 textures.\n");
+	// 			break;
+	// 		}
+	// 	}
+	// }
 
 	// printf("%p\n", node->tex[0]);
 	// printf("%i\n", textureLocs[0]);
-	// texRender(node->tex[0], GL_TEXTURE0, 0, textureLocs[0]);
+	texRender(node->tex[0], GL_TEXTURE0, 0, textureLocs[0]);
+	// printf("here\n");
 
 
 	/* Set the uniform modeling matrix. */
@@ -255,43 +261,43 @@ void sceneRender(sceneNode *node, GLdouble parent[4][4], GLint modelingLoc,
 
 	/* Render the mesh, the children, and the younger siblings. */
 	meshGLRender(node->meshGL, attrNum, attrDims, attrLocs);
-	// texUnrender(node->tex[0], GL_TEXTURE0);
-	// for (i = 0; i < node->texNum; i++) {
-	// 	switch(i) {
-	// 		case(0):{
-	// 			texUnrender(node->tex[i], GL_TEXTURE0);
-	// 			break;
-	// 		}
-	// 		case(1):{
-	// 			texUnrender(node->tex[i], GL_TEXTURE1);
-	// 			break;
-	// 		}
-	// 		case(2):{
-	// 			texUnrender(node->tex[i], GL_TEXTURE2);
-	// 			break;
-	// 		}
-	// 		case(3):{
-	// 			texUnrender(node->tex[i], GL_TEXTURE3);
-	// 			break;
-	// 		}
-	// 		case(4):{
-	// 			texUnrender(node->tex[i], GL_TEXTURE4);
-	// 			break;
-	// 		}
-	// 		case(5):{
-	// 			texUnrender(node->tex[i], GL_TEXTURE5);
-	// 			break;
-	// 		}
-	// 		case(6):{
-	// 			texUnrender(node->tex[i], GL_TEXTURE6);
-	// 			break;
-	// 		}
-	// 		case(7):{
-	// 			texUnrender(node->tex[i], GL_TEXTURE7);
-	// 			break;
-	// 		}
-	// 	}
-	// }
+	texUnrender(node->tex[0], GL_TEXTURE0);
+	for (i = 0; i < node->texNum; i++) {
+		switch(i) {
+			case(0):{
+				texUnrender(node->tex[i], GL_TEXTURE0);
+				break;
+			}
+			case(1):{
+				texUnrender(node->tex[i], GL_TEXTURE1);
+				break;
+			}
+			case(2):{
+				texUnrender(node->tex[i], GL_TEXTURE2);
+				break;
+			}
+			case(3):{
+				texUnrender(node->tex[i], GL_TEXTURE3);
+				break;
+			}
+			case(4):{
+				texUnrender(node->tex[i], GL_TEXTURE4);
+				break;
+			}
+			case(5):{
+				texUnrender(node->tex[i], GL_TEXTURE5);
+				break;
+			}
+			case(6):{
+				texUnrender(node->tex[i], GL_TEXTURE6);
+				break;
+			}
+			case(7):{
+				texUnrender(node->tex[i], GL_TEXTURE7);
+				break;
+			}
+		}
+	}
 
 	if (node->firstChild != NULL) {
 		sceneRender(node->firstChild, parentMultiplied, modelingLoc,

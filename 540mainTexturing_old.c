@@ -21,13 +21,12 @@ GLuint program;
 GLint attrLocs[3];
 GLint viewingLoc, modelingLoc;
 GLint unifLocs[1];
-camCamera cam;
 GLint textureLocs[1];
 texTexture *tex[3];
 texTexture texture1;
 texTexture texture2;
 texTexture texture3;
-
+camCamera cam;
 /* Allocate three meshes and three scene graph nodes. */
 meshGLMesh rootMesh, childMesh, siblingMesh;
 sceneNode rootNode, childNode, siblingNode;
@@ -85,19 +84,11 @@ int initializeScene(void) {
 	meshGLInitialize(&siblingMesh, &mesh);
 	meshDestroy(&mesh);
 	/* Initialize scene graph nodes. */
-	// if (sceneInitialize(&siblingNode, 2, 0, &siblingMesh, NULL, NULL) != 0)
-	// 	return 4;
-	// if (sceneInitialize(&childNode, 2, 0, &childMesh, NULL, NULL) != 0)
-	// 	return 5;
-	// if (sceneInitialize(&rootNode, 2, 0, &rootMesh, &childNode, &siblingNode) != 0)
-	// 	return 6;
-
-
-	if (sceneInitialize(&siblingNode, 2, 1, &siblingMesh, NULL, NULL) != 0)
+	if (sceneInitialize(&siblingNode, 2, 0, &siblingMesh, NULL, NULL) != 0)
 		return 4;
-	if (sceneInitialize(&childNode, 2, 1, &childMesh, NULL, NULL) != 0)
+	if (sceneInitialize(&childNode, 2, 0, &childMesh, NULL, NULL) != 0)
 		return 5;
-	if (sceneInitialize(&rootNode, 2, 1, &rootMesh, &childNode, &siblingNode) != 0)
+	if (sceneInitialize(&rootNode, 2, 0, &rootMesh, &childNode, &siblingNode) != 0)
 		return 6;
 	/* Customize the uniforms. */
 	GLdouble trans[3] = {1.0, 0.0, 0.0};
@@ -109,11 +100,20 @@ int initializeScene(void) {
 	sceneSetUniform(&childNode, unif);
 	sceneSetUniform(&rootNode, unif);
 
+
+
+
+
 	sceneSetTexture(&rootNode, tex);
 	sceneSetTexture(&siblingNode, tex);
 	sceneSetTexture(&childNode, tex);
+	//
+	sceneSetOneTexture(&rootNode, 0, tex[0]);
+	sceneSetOneTexture(&siblingNode, 0, tex[0]);
+	sceneSetOneTexture(&childNode, 0, tex[0]);
 
 
+	// sceneSetOneTexture(&rootNode, 0, &texture1);
 	return 0;
 }
 
@@ -126,8 +126,7 @@ void destroyScene(void) {
 
 /* Returns 0 on success, non-zero on failure. */
 int initializeShaderProgram(void) {
-
-/*
+	/* What do the shaders do with the texture coordinates? */
 	GLchar vertexCode[] = "\
 		uniform mat4 viewing;\
 		uniform mat4 modeling;\
@@ -146,34 +145,8 @@ int initializeShaderProgram(void) {
 		varying vec4 rgba;\
 		varying vec2 st;\
 		void main() {\
-			gl_FragColor = rgba * texture2D(texture, st);\
+			gl_FragColor = rgba;\
 		}";
-*/
-
-
-
-	GLchar vertexCode[] = "\
-		uniform mat4 viewing;\
-		uniform mat4 modeling;\
-		attribute vec3 position;\
-		attribute vec2 texCoords;\
-		attribute vec3 normal;\
-		uniform vec2 spice;\
-		varying vec4 rgba;\
-		varying vec2 st;\
-		void main() {\
-			gl_Position = viewing * modeling * vec4(position, 1.0);\
-			rgba = vec4(texCoords, spice) + vec4(normal, 1.0);\
-			st = texCoords;\
-		}";
-	GLchar fragmentCode[] = "\
-		uniform sampler2D texture;\
-		varying vec4 rgba;\
-		varying vec2 st;\
-		void main() {\
-			gl_FragColor = rgba * texture2D(texture, st);\
-		}";
-		// glFragColor = rgba;
 	program = makeProgram(vertexCode, fragmentCode);
 	if (program != 0) {
 		glUseProgram(program);
@@ -184,10 +157,10 @@ int initializeShaderProgram(void) {
 		modelingLoc = glGetUniformLocation(program, "modeling");
 		unifLocs[0] = glGetUniformLocation(program, "spice");
 		textureLocs[0] = glGetUniformLocation(program, "texture");
+		printf("%i\n", textureLocs[0]);
 	}
 	return (program == 0);
 }
-
 void render(void) {
 	/* This part is the same as in 520mainCamera.c. */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -218,11 +191,42 @@ int main(void) {
         glfwTerminate();
         return 2;
     }
+
+
+
+
+
+		// glActiveTexture(GL_TEXTURE0);
+		// glEnable(GL_TEXTURE_2D);
+		if (texInitializeFile(&texture1, "purp.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
+			glfwDestroyWindow(window);
+			glfwTerminate();
+			return 3;
+		}
+		// if (texInitializeFile(&texture2, "nemo.png", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
+    // 		glfwDestroyWindow(window);
+    //     glfwTerminate();
+    //     return 3;
+    // }
+		// if (texInitializeFile(&texture3, "shark.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
+    // 		glfwDestroyWindow(window);
+    //     glfwTerminate();
+    //     return 3;
+    // }
+		tex[0] = &texture1;
+		// tex[1] = &texture2;
+		// tex[2] = &texture3;
+
+
+
+
+
+
     glfwSetWindowSizeCallback(window, handleResize);
     glfwSetKeyCallback(window, handleKey);
     glfwMakeContextCurrent(window);
     fprintf(stderr, "main: OpenGL %s, GLSL %s.\n",
-		glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
+						glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
     glEnable(GL_DEPTH_TEST);
     glDepthRange(1.0, 0.0);
     glEnable(GL_CULL_FACE);
@@ -230,37 +234,17 @@ int main(void) {
     /* Initialize a whole scene, rather than just one mesh. */
     if (initializeScene() != 0)
     	return 3;
-
-
-
-
-		if (texInitializeFile(&texture1, "purp.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
-				glfwDestroyWindow(window);
-				glfwTerminate();
-				return 3;
-		}
-		if (texInitializeFile(&texture2, "nemo.png", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
-    		glfwDestroyWindow(window);
-        glfwTerminate();
-        return 3;
-    }
-		if (texInitializeFile(&texture3, "shark.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
-    		glfwDestroyWindow(window);
-        glfwTerminate();
-        return 3;
-    }
-		tex[0] = &texture1;
-		tex[1] = &texture2;
-		tex[2] = &texture3;
-
-
-
-
     if (initializeShaderProgram() != 0)
     	return 4;
+
+
+		// sceneSetTexture(&rootNode, tex);
+		// sceneSetTexture(&childNode, tex);
+		// sceneSetTexture(&siblingNode, tex);
+
     GLdouble target[3] = {0.0, 0.0, 0.0};
 		camSetControls(&cam, camPERSPECTIVE, M_PI / 6.0, 10.0, 512.0, 512.0, 10.0,
-		M_PI / 4.0, M_PI / 4.0, target);
+									 M_PI / 4.0, M_PI / 4.0, target);
     while (glfwWindowShouldClose(window) == 0) {
         render();
         glfwSwapBuffers(window);
