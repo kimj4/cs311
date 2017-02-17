@@ -1,5 +1,4 @@
 /*** Creation and destruction ***/
-
 /* Feel free to read from this struct's members, but don't write to them except
 through the accessor functions. */
 typedef struct sceneNode sceneNode;
@@ -134,11 +133,15 @@ void sceneRemoveChild(sceneNode *node, sceneNode *child) {
 
 /* Sets the list of textures to the given one*/
 void sceneSetTexture(sceneNode *node, texTexture *tex[]) {
-    node->tex = tex;
+		// vecCopy(node->texNum, tex, node->tex);
+		int i;
+		for (i = 0; i < node->texNum; i++) {
+				node->tex[i] = tex[i];
+		}
 }
 
 /* Sets the index-th texture in the texture list to the given new texture*/
-void sceneSetOneTexutre(sceneNode *node, int index, texTexture tex) {
+void sceneSetOneTexture(sceneNode *node, int index, texTexture *tex) {
     node->tex[index] = tex;
 }
 /*** OpenGL ***/
@@ -154,7 +157,7 @@ void sceneRender(sceneNode *node, GLdouble parent[4][4], GLint modelingLoc,
 		GLuint unifNum, GLuint unifDims[], GLint unifLocs[],
 		GLuint attrNum, GLuint attrDims[], GLint attrLocs[],
 		GLint textureLocs[]) {
-	int i;	
+	int i;
 	// render the textures
 	for (i = 0; i < node->texNum; i++) {
 		switch(i) {
@@ -197,6 +200,10 @@ void sceneRender(sceneNode *node, GLdouble parent[4][4], GLint modelingLoc,
 		}
 	}
 
+	// printf("%p\n", node->tex[0]);
+	// printf("%i\n", textureLocs[0]);
+	// texRender(node->tex[0], GL_TEXTURE0, 0, textureLocs[0]);
+
 
 	/* Set the uniform modeling matrix. */
 	GLdouble selfIsom[4][4], parentMultiplied[4][4];
@@ -207,7 +214,7 @@ void sceneRender(sceneNode *node, GLdouble parent[4][4], GLint modelingLoc,
 	glUniformMatrix4fv(modelingLoc, 1, GL_FALSE, (GLfloat *)pmGL);
 
 	/* Set the other uniforms. The casting from double to float is annoying. */
-	
+
 	int curUnifIdx = 0;
 	for (i = 0; i < unifNum; i++) {
 		switch(unifDims[i]) {
@@ -248,52 +255,55 @@ void sceneRender(sceneNode *node, GLdouble parent[4][4], GLint modelingLoc,
 
 	/* Render the mesh, the children, and the younger siblings. */
 	meshGLRender(node->meshGL, attrNum, attrDims, attrLocs);
-	for (i = 0; i < node->texNum; i++) {
-		switch(i) {
-			case(0):{
-				texUnrender(node->tex[i], GL_TEXTURE0);
-				break;
-			}
-			case(1):{
-				texUnrender(node->tex[i], GL_TEXTURE1);
-				break;
-			}
-			case(2):{
-				texUnrender(node->tex[i], GL_TEXTURE2);
-				break;
-			}
-			case(3):{
-				texUnrender(node->tex[i], GL_TEXTURE3);
-				break;
-			}
-			case(4):{
-				texUnrender(node->tex[i], GL_TEXTURE4);
-				break;
-			}
-			case(5):{
-				texUnrender(node->tex[i], GL_TEXTURE5);
-				break;
-			}
-			case(6):{
-				texUnrender(node->tex[i], GL_TEXTURE6);
-				break;
-			}
-			case(7):{
-				texUnrender(node->tex[i], GL_TEXTURE7);
-				break;
-			}
-		}
-	}
+	// texUnrender(node->tex[0], GL_TEXTURE0);
+	// for (i = 0; i < node->texNum; i++) {
+	// 	switch(i) {
+	// 		case(0):{
+	// 			texUnrender(node->tex[i], GL_TEXTURE0);
+	// 			break;
+	// 		}
+	// 		case(1):{
+	// 			texUnrender(node->tex[i], GL_TEXTURE1);
+	// 			break;
+	// 		}
+	// 		case(2):{
+	// 			texUnrender(node->tex[i], GL_TEXTURE2);
+	// 			break;
+	// 		}
+	// 		case(3):{
+	// 			texUnrender(node->tex[i], GL_TEXTURE3);
+	// 			break;
+	// 		}
+	// 		case(4):{
+	// 			texUnrender(node->tex[i], GL_TEXTURE4);
+	// 			break;
+	// 		}
+	// 		case(5):{
+	// 			texUnrender(node->tex[i], GL_TEXTURE5);
+	// 			break;
+	// 		}
+	// 		case(6):{
+	// 			texUnrender(node->tex[i], GL_TEXTURE6);
+	// 			break;
+	// 		}
+	// 		case(7):{
+	// 			texUnrender(node->tex[i], GL_TEXTURE7);
+	// 			break;
+	// 		}
+	// 	}
+	// }
 
 	if (node->firstChild != NULL) {
 		sceneRender(node->firstChild, parentMultiplied, modelingLoc,
 								unifNum, unifDims, unifLocs,
-								attrNum, attrDims, attrLocs);
+								attrNum, attrDims, attrLocs,
+								textureLocs);
 	}
 	if (node->nextSibling != NULL) {
 		sceneRender(node->nextSibling, parent, modelingLoc,
 								unifNum, unifDims, unifLocs,
-								attrNum, attrDims, attrLocs);
+								attrNum, attrDims, attrLocs,
+								textureLocs);
 	}
 
 }

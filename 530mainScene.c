@@ -13,7 +13,7 @@
 #include "510mesh.c"
 #include "520matrix.c"
 #include "520camera.c"
-#include "530scene.c"
+#include "540scene.c"
 
 GLdouble alpha = 0.0;
 GLuint program;
@@ -78,11 +78,11 @@ int initializeScene(void) {
 	meshGLInitialize(&siblingMesh, &mesh);
 	meshDestroy(&mesh);
 	/* Initialize scene graph nodes. */
-	if (sceneInitialize(&siblingNode, 2, &siblingMesh, NULL, NULL) != 0)
+	if (sceneInitialize(&siblingNode, 2, 0, &siblingMesh, NULL, NULL) != 0)
 		return 4;
-	if (sceneInitialize(&childNode, 2, &childMesh, NULL, NULL) != 0)
+	if (sceneInitialize(&childNode, 2, 0, &childMesh, NULL, NULL) != 0)
 		return 5;
-	if (sceneInitialize(&rootNode, 2, &rootMesh, &childNode, &siblingNode) != 0)
+	if (sceneInitialize(&rootNode, 2, 0, &rootMesh, &childNode, &siblingNode) != 0)
 		return 6;
 	/* Customize the uniforms. */
 	GLdouble trans[3] = {1.0, 0.0, 0.0};
@@ -151,8 +151,9 @@ void render(void) {
 	mat44Identity(identity);
 	GLuint unifDims[1] = {2};
 	GLuint attrDims[3] = {3, 2, 3};
+	GLint dummyLocs[1];
 	sceneRender(&rootNode, identity, modelingLoc, 1, unifDims, unifLocs, 3,
-		attrDims, attrLocs);
+		attrDims, attrLocs, dummyLocs);
 }
 
 int main(void) {

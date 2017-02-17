@@ -37,6 +37,7 @@ int texInitializeFile(texTexture *tex, char *path, GLint minification,
 		fprintf(stderr, "with STB Image reason: %s.\n", stbi_failure_reason());
 		return 1;
 	}
+	// printf("%s\n", rawData);
 	/* Right now we support only 3-channel images. Supporting other texelDims
 	is not hard --- maybe just changing certain parameters to glTexImage2D
 	below, and then using the data correctly in the shader. */
@@ -46,10 +47,8 @@ int texInitializeFile(texTexture *tex, char *path, GLint minification,
 	}
 	/* Load the data into OpenGL. */
 	glGenTextures(1, &(tex->openGL));
-	texSetFilteringBorder(tex, minification, magnification, leftRight,
-		bottomTop);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-		GL_UNSIGNED_BYTE, rawData);
+	texSetFilteringBorder(tex, minification, magnification, leftRight, bottomTop);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, rawData);
 	stbi_image_free(rawData);
 	if (glGetError() != GL_NO_ERROR) {
 		fprintf(stderr, "texInitializeFile: OpenGL error.\n");
@@ -73,7 +72,7 @@ the texture into a certain texture unit. textureUnit is something like
 GL_TEXTURE0. textureUnitIndex would then be 0. */
 void texRender(texTexture *tex, GLenum textureUnit, GLint textureUnitIndex,
 		GLint textureLoc) {
-	glActiveTexture(textureUnit);
+		glActiveTexture(textureUnit);
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, tex->openGL);
     glUniform1i(textureLoc, textureUnitIndex);
@@ -83,7 +82,7 @@ void texRender(texTexture *tex, GLenum textureUnit, GLint textureUnitIndex,
 the texture from a certain texture unit. textureUnit is something like
 GL_TEXTURE0. */
 void texUnrender(texTexture *tex, GLenum textureUnit) {
-	glActiveTexture(textureUnit);
+		glActiveTexture(textureUnit);
     glDisable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 }

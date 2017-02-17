@@ -50,7 +50,7 @@ void initializeMesh(void) {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triNum * 3 * sizeof(GLuint),
 		(GLvoid *)triangles, GL_STATIC_DRAW);
 }
-
+// =========================================================================
 /* This texture stuff is new. */
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -59,10 +59,12 @@ void initializeMesh(void) {
 GLuint texture;
 GLint texCoordsLoc, textureLoc;
 
-/* Loads the given image file into an OpenGL texture. The width and height of the image must be powers of 2. Returns 0 on success, non-zero on failure. On
+/* Loads the given image file into an OpenGL texture. The width and height of
+the image must be powers of 2. Returns 0 on success, non-zero on failure. On
 success, the user must later deallocate the texture using a call like
 glDeleteTextures(1, texture). */
 int initializeTexture(GLuint *texture, char *path) {
+	// here, texture is a GLuint
 	/* Use STB Image to load the texture data from the file. */
 	int width, height, texelDim;
 	unsigned char *rawData;
@@ -199,6 +201,7 @@ void render(void) {
 }
 
 int main(void) {
+		// jk: the usual boilerplate stuff
     glfwSetErrorCallback(handleError);
     if (glfwInit() == 0)
         return 1;
@@ -208,6 +211,7 @@ int main(void) {
         glfwTerminate();
         return 2;
     }
+		// feature setting and enabling
     glfwSetWindowSizeCallback(window, handleResize);
     glfwMakeContextCurrent(window);
     fprintf(stderr, "main: OpenGL %s, GLSL %s.\n",
@@ -216,15 +220,17 @@ int main(void) {
     glDepthRange(1.0, 0.0);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+
     /* A 'texture unit' is a piece of machinery inside the GPU that performs
     texture mapping. A GPU might have many texture units, allowing you to map
     many textures onto your meshes in complicated ways. The glActiveTexture
     function selects which texture unit is affected by subsequent OpenGL calls.
     In this tutorial, we use only texture unit 0, so we activate it here, once
     and for all. */
+		// === texture: calls initializeTexture ===
     glActiveTexture(GL_TEXTURE0);
     glEnable(GL_TEXTURE_2D);
-    if (initializeTexture(&texture, "branjelina.jpg") != 0) {
+    if (initializeTexture(&texture, "purp.jpg") != 0) {
     	glfwDestroyWindow(window);
         glfwTerminate();
         return 3;
@@ -242,8 +248,8 @@ int main(void) {
     }
     glDeleteTextures(1, &texture);
     glDeleteProgram(program);
-	glDeleteBuffers(2, buffers);
-	glfwDestroyWindow(window);
+		glDeleteBuffers(2, buffers);
+		glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
 }
