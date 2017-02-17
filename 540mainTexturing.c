@@ -92,7 +92,6 @@ int initializeScene(void) {
 	// if (sceneInitialize(&rootNode, 2, 0, &rootMesh, &childNode, &siblingNode) != 0)
 	// 	return 6;
 
-
 	if (sceneInitialize(&siblingNode, 2, 1, &siblingMesh, NULL, NULL) != 0)
 		return 4;
 	if (sceneInitialize(&childNode, 2, 1, &childMesh, NULL, NULL) != 0)
@@ -113,7 +112,8 @@ int initializeScene(void) {
 	sceneSetTexture(&siblingNode, tex);
 	sceneSetTexture(&childNode, tex);
 
-
+	sceneSetOneTexture(&siblingNode, 0, &texture2);
+	sceneSetOneTexture(&childNode, 0, &texture3);
 	return 0;
 }
 
@@ -126,32 +126,6 @@ void destroyScene(void) {
 
 /* Returns 0 on success, non-zero on failure. */
 int initializeShaderProgram(void) {
-
-/*
-	GLchar vertexCode[] = "\
-		uniform mat4 viewing;\
-		uniform mat4 modeling;\
-		attribute vec3 position;\
-		attribute vec3 color;\
-		attribute vec2 texCoords;\
-		varying vec4 rgba;\
-		varying vec2 st;\
-		void main() {\
-			gl_Position = viewing * modeling * vec4(position, 1.0);\
-			rgba = vec4(color, 1.0);\
-			st = texCoords;\
-		}";
-	GLchar fragmentCode[] = "\
-		uniform sampler2D texture;\
-		varying vec4 rgba;\
-		varying vec2 st;\
-		void main() {\
-			gl_FragColor = rgba * texture2D(texture, st);\
-		}";
-*/
-
-
-
 	GLchar vertexCode[] = "\
 		uniform mat4 viewing;\
 		uniform mat4 modeling;\
@@ -173,7 +147,7 @@ int initializeShaderProgram(void) {
 		void main() {\
 			gl_FragColor = rgba * texture2D(texture, st);\
 		}";
-		// glFragColor = rgba;
+		// gl_FragColor = rgba;
 	program = makeProgram(vertexCode, fragmentCode);
 	if (program != 0) {
 		glUseProgram(program);
@@ -205,7 +179,7 @@ void render(void) {
 	GLuint unifDims[1] = {2};
 	GLuint attrDims[3] = {3, 2, 3};
 	sceneRender(&rootNode, identity, modelingLoc, 1, unifDims, unifLocs, 3,
-		attrDims, attrLocs, textureLocs);
+							attrDims, attrLocs, textureLocs);
 }
 
 int main(void) {
@@ -227,14 +201,9 @@ int main(void) {
     glDepthRange(1.0, 0.0);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-    /* Initialize a whole scene, rather than just one mesh. */
-    if (initializeScene() != 0)
-    	return 3;
 
 
-
-
-		if (texInitializeFile(&texture1, "purp.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
+		if (texInitializeFile(&texture1, "dory.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
 				glfwDestroyWindow(window);
 				glfwTerminate();
 				return 3;
@@ -254,6 +223,10 @@ int main(void) {
 		tex[2] = &texture3;
 
 
+
+    /* Initialize a whole scene, rather than just one mesh. */
+    if (initializeScene() != 0)
+    	return 3;
 
 
     if (initializeShaderProgram() != 0)

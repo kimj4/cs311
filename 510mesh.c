@@ -115,9 +115,7 @@ void meshGLRender(meshGLMesh *meshGL, GLuint attrNum, GLuint attrDims[],
 				glEnableVertexAttribArray(attrLocs[i]);
 				stride += attrDims[i];
 		}
-
 		glBindBuffer(GL_ARRAY_BUFFER, meshGL->buffers[0]);
-
 		int offsetCount = 0;
 		for (i = 0; i < attrNum; i++) {
 				glVertexAttribPointer(attrLocs[i], attrDims[i], GL_DOUBLE, GL_FALSE,
@@ -127,7 +125,6 @@ void meshGLRender(meshGLMesh *meshGL, GLuint attrNum, GLuint attrDims[],
 		}
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshGL->buffers[1]);
 		glDrawElements(GL_TRIANGLES, meshGL->triNum * 3, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
-
 		for (i = 0; i < attrNum; i++) {
 				glDisableVertexAttribArray(attrLocs[i]);
 		}
