@@ -15,7 +15,7 @@
 #include "520camera.c"
 #include "540texture.c"
 #include "540scene.c"
-#include "550light.c"
+#include "560light.c"
 
 GLdouble alpha = 0.0;
 GLuint program;
@@ -214,11 +214,6 @@ void render(void) {
 	mat44Identity(identity);
 	GLuint unifDims[1] = {2};
 	GLuint attrDims[3] = {3, 2, 3};
-
-	// TODO: ADD SPECULAR LIGHTING. 
-	//  Determine specular from normal and camPos and lightPos
-
-
 	lightRender(&light, unifLocs[3], unifLocs[4], unifLocs[5]);
 	sceneRender(&rootNode, identity, modelingLoc, 1, unifDims, unifLocs, 3,
 							attrDims, attrLocs, textureLocs);
@@ -265,39 +260,6 @@ int main(void) {
 	tex[1] = &texture2;
 	tex[2] = &texture3;
 
-	// Initialize the light
-			// /* Sets the light's translation. */
-			// void lightSetTranslation(lightLight *light, GLdouble transl[3]) {
-			// 	vecCopy(3, transl, light->translation);
-			// }
-
-			// /* Sets the light's RGB color. */
-			// void lightSetColor(lightLight *light, GLdouble rgb[3]) {
-			// 	vecCopy(3, rgb, light->color);
-			// }
-
-			// /* Sets the light's attenuation coefficients. The light intensity at distance d 
-			// from the light is 1 / (a0 + a1 d + a2 d^2) times whatever it would be 
-			// unattenuated. So, to deactivate attenuation, use values 1.0, 0.0, 0.0. */
-			// void lightSetAttenuation(lightLight *light, GLdouble atten[3]) {
-			// 	vecCopy(3, atten, light->attenuation);
-			// }
-
-			// /*** OpenGL ***/
-
-			// /* The '...Loc' arguments are shader locations. This function loads those 
-			// locations with the light's settings. */
-			// void lightRender(lightLight *light, GLint positionLoc, GLint colorLoc, 
-			// 		GLint attenLoc) {
-			// 	GLfloat vec[3];
-			// 	vecOpenGL(3, light->translation, vec);
-			// 	glUniform3fv(positionLoc, 1, vec);
-			// 	vecOpenGL(3, light->color, vec);
-			// 	glUniform3fv(colorLoc, 1, vec);
-			// 	vecOpenGL(3, light->attenuation, vec);
-			// 	glUniform3fv(attenLoc, 1, vec);
-			// }
-
 	GLdouble lightTrans[3] = {100, 100, 100};
 	GLdouble lightRGB[3] = {1.0, 1.0, 1.0};
 	GLdouble lightAtt[3] = {1.0, 0.0, 0.0};
@@ -305,6 +267,8 @@ int main(void) {
 	lightSetTranslation(&light, lightTrans);
 	lightSetColor(&light, lightRGB);
 	lightSetAttenuation(&light, lightAtt);
+	lightSetType(&light, lightOMNI);
+	lightSetRotation(&light, )
 
 
 
