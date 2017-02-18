@@ -1,9 +1,10 @@
 /*
- * 100vector.c
+ * 530vector.c
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * includes function for spherical coordinates and cross products
+ * changed to work with OpenGL and now includes operation to convert
+ * GLdouble vectors into GLfloat vectors
  */
 #include <stdarg.h>
 /*** In general dimensions ***/

@@ -41,7 +41,7 @@ void handleError(int error, const char *description) {
 
 void handleResize(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, width, height);
-	camSetWidthHeight(&cam, width, height);
+		camSetWidthHeight(&cam, width, height);
 }
 
 void handleKey(GLFWwindow *window, int key, int scancode, int action,
@@ -87,13 +87,6 @@ int initializeScene(void) {
 		return 3;
 	meshGLInitialize(&siblingMesh, &mesh);
 	meshDestroy(&mesh);
-	/* Initialize scene graph nodes. */
-	// if (sceneInitialize(&siblingNode, 2, 0, &siblingMesh, NULL, NULL) != 0)
-	// 	return 4;
-	// if (sceneInitialize(&childNode, 2, 0, &childMesh, NULL, NULL) != 0)
-	// 	return 5;
-	// if (sceneInitialize(&rootNode, 2, 0, &rootMesh, &childNode, &siblingNode) != 0)
-	// 	return 6;
 
 	if (sceneInitialize(&siblingNode, 2, 1, &siblingMesh, NULL, NULL) != 0)
 		return 4;
@@ -203,6 +196,7 @@ void render(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(program);
 	camRender(&cam, viewingLoc);
+
 	/* This animation code is different from that in 520mainCamera.c. */
 	GLdouble rot[3][3], identity[4][4], axis[3] = {1.0, 1.0, 1.0};
 	vecUnit(3, axis, axis);
@@ -210,14 +204,11 @@ void render(void) {
 	mat33AngleAxisRotation(alpha, axis, rot);
 	sceneSetRotation(&rootNode, rot);
 	sceneSetOneUniform(&rootNode, 0, 0.5 + 0.5 * sin(alpha * 7.0));
+
 	/* This rendering code is different from that in 520mainCamera.c. */
 	mat44Identity(identity);
 	GLuint unifDims[1] = {2};
 	GLuint attrDims[3] = {3, 2, 3};
-
-	// TODO: ADD SPECULAR LIGHTING. 
-	//  Determine specular from normal and camPos and lightPos
-
 
 	lightRender(&light, unifLocs[3], unifLocs[4], unifLocs[5]);
 	sceneRender(&rootNode, identity, modelingLoc, 1, unifDims, unifLocs, 3,
@@ -246,57 +237,24 @@ int main(void) {
 
 
     // Initialize all the textures and put them into the textures list.
-	if (texInitializeFile(&texture1, "dory.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
-		glfwDestroyWindow(window);
-		glfwTerminate();
-		return 3;
-	}
-	if (texInitializeFile(&texture2, "nemo.png", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
-		glfwDestroyWindow(window);
-    	glfwTerminate();
-    	return 3;
-    }
-	if (texInitializeFile(&texture3, "shark.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
-		glfwDestroyWindow(window);
-		glfwTerminate();
-	   return 3;
-    }
+		if (texInitializeFile(&texture1, "dory.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
+			glfwDestroyWindow(window);
+			glfwTerminate();
+			return 3;
+		}
+		if (texInitializeFile(&texture2, "nemo.png", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
+			glfwDestroyWindow(window);
+	    	glfwTerminate();
+	    	return 3;
+	    }
+		if (texInitializeFile(&texture3, "shark.jpg", GL_LINEAR, GL_LINEAR, GL_CLAMP, GL_REPEAT) != 0) {
+				glfwDestroyWindow(window);
+				glfwTerminate();
+		   return 3;
+	  }
 	tex[0] = &texture1;
 	tex[1] = &texture2;
 	tex[2] = &texture3;
-
-	// Initialize the light
-			// /* Sets the light's translation. */
-			// void lightSetTranslation(lightLight *light, GLdouble transl[3]) {
-			// 	vecCopy(3, transl, light->translation);
-			// }
-
-			// /* Sets the light's RGB color. */
-			// void lightSetColor(lightLight *light, GLdouble rgb[3]) {
-			// 	vecCopy(3, rgb, light->color);
-			// }
-
-			// /* Sets the light's attenuation coefficients. The light intensity at distance d 
-			// from the light is 1 / (a0 + a1 d + a2 d^2) times whatever it would be 
-			// unattenuated. So, to deactivate attenuation, use values 1.0, 0.0, 0.0. */
-			// void lightSetAttenuation(lightLight *light, GLdouble atten[3]) {
-			// 	vecCopy(3, atten, light->attenuation);
-			// }
-
-			// /*** OpenGL ***/
-
-			// /* The '...Loc' arguments are shader locations. This function loads those 
-			// locations with the light's settings. */
-			// void lightRender(lightLight *light, GLint positionLoc, GLint colorLoc, 
-			// 		GLint attenLoc) {
-			// 	GLfloat vec[3];
-			// 	vecOpenGL(3, light->translation, vec);
-			// 	glUniform3fv(positionLoc, 1, vec);
-			// 	vecOpenGL(3, light->color, vec);
-			// 	glUniform3fv(colorLoc, 1, vec);
-			// 	vecOpenGL(3, light->attenuation, vec);
-			// 	glUniform3fv(attenLoc, 1, vec);
-			// }
 
 	GLdouble lightTrans[3] = {100, 100, 100};
 	GLdouble lightRGB[3] = {1.0, 1.0, 1.0};
@@ -312,15 +270,13 @@ int main(void) {
 
 
     /* Initialize a whole scene, rather than just one mesh. */
-    if (initializeScene() != 0)
-    	return 3;
+    if (initializeScene() != 0) return 3;
 
+    if (initializeShaderProgram() != 0) return 4;
 
-    if (initializeShaderProgram() != 0)
-    	return 4;
     GLdouble target[3] = {0.0, 0.0, 0.0};
 		camSetControls(&cam, camPERSPECTIVE, M_PI / 6.0, 10.0, 512.0, 512.0, 10.0,
-		M_PI / 4.0, M_PI / 4.0, target);
+									 M_PI / 4.0, M_PI / 4.0, target);
     while (glfwWindowShouldClose(window) == 0) {
         render();
         glfwSwapBuffers(window);

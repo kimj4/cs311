@@ -1,11 +1,10 @@
 /*
- * 130matrix.c
+ * 520matrix.c
  * Ju Yun Kim
  * Carleton College
  * CS 311
- * file containing various implementations of matrix operations
- * 130: contains methods for orthographic and perspective projections.
- * also contains viewport transformation.
+ * altered to play nicely with OpenGL
+ * now includes function to convert GLdouble matrices into GLfloat matrices
  */
 
 #include <math.h>
@@ -387,10 +386,6 @@ void mat44OpenGL(GLdouble m[4][4], GLfloat openGL[4][4]) {
 	for (int i = 0; i < 4; i += 1) {
 		for (int j = 0; j < 4; j += 1) {
 			openGL[i][j] = m[j][i];
-			// printf("\n");
-			// printf("double: %f\n", m[j][i]);
-			// printf("float: %f\n", openGL[i][j]);
-			// printf("\n");
 		}
 	}
 }

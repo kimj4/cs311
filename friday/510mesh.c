@@ -4,20 +4,21 @@
 the accessors below such as meshSetTriangle, meshSetVertex. */
 typedef struct meshMesh meshMesh;
 struct meshMesh {
-	int triNum, vertNum, attrDim;
-	int *tri;						/* triNum * 3 ints */
-	double *vert;					/* vertNum * attrDim doubles */
+	GLuint triNum, vertNum, attrDim;
+	GLuint *tri;						/* triNum * 3 GLuints */
+	GLdouble *vert;					/* vertNum * attrDim GLdoubles */
 };
 
 /* Initializes a mesh with enough memory to hold its triangles and vertices.
 Does not actually fill in those triangles or vertices with useful data. When
 you are finished with the mesh, you must call meshDestroy to deallocate its
 backing resources. */
-int meshInitialize(meshMesh *mesh, int triNum, int vertNum, int attrDim) {
-	mesh->tri = (int *)malloc(triNum * 3 * sizeof(int) +
-		vertNum * attrDim * sizeof(double));
+int meshInitialize(meshMesh *mesh, GLuint triNum, GLuint vertNum,
+		GLuint attrDim) {
+	mesh->tri = (GLuint *)malloc(triNum * 3 * sizeof(GLuint) +
+		vertNum * attrDim * sizeof(GLdouble));
 	if (mesh->tri != NULL) {
-		mesh->vert = (double *)&(mesh->tri[triNum * 3]);
+		mesh->vert = (GLdouble *)&(mesh->tri[triNum * 3]);
 		mesh->triNum = triNum;
 		mesh->vertNum = vertNum;
 		mesh->attrDim = attrDim;
@@ -26,8 +27,8 @@ int meshInitialize(meshMesh *mesh, int triNum, int vertNum, int attrDim) {
 }
 
 /* Sets the trith triangle to have vertex indices i, j, k. */
-void meshSetTriangle(meshMesh *mesh, int tri, int i, int j, int k) {
-	if (0 <= tri && tri < mesh->triNum) {
+void meshSetTriangle(meshMesh *mesh, GLuint tri, GLuint i, GLuint j, GLuint k) {
+	if (tri < mesh->triNum) {
 		mesh->tri[3 * tri] = i;
 		mesh->tri[3 * tri + 1] = j;
 		mesh->tri[3 * tri + 2] = k;
@@ -35,28 +36,28 @@ void meshSetTriangle(meshMesh *mesh, int tri, int i, int j, int k) {
 }
 
 /* Returns a pointer to the trith triangle. For example:
-	int *triangle13 = meshGetTrianglePointer(&mesh, 13);
+	GLuint *triangle13 = meshGetTrianglePointer(&mesh, 13);
 	printf("%d, %d, %d\n", triangle13[0], triangle13[1], triangle13[2]); */
-int *meshGetTrianglePointer(meshMesh *mesh, int tri) {
-	if (0 <= tri && tri < mesh->triNum)
+GLuint *meshGetTrianglePointer(meshMesh *mesh, GLuint tri) {
+	if (tri < mesh->triNum)
 		return &mesh->tri[tri * 3];
 	else
 		return NULL;
 }
 
 /* Sets the vertth vertex to have attributes attr. */
-void meshSetVertex(meshMesh *mesh, int vert, double attr[]) {
-	int k;
-	if (0 <= vert && vert < mesh->vertNum)
+void meshSetVertex(meshMesh *mesh, GLuint vert, GLdouble attr[]) {
+	GLuint k;
+	if (vert < mesh->vertNum)
 		for (k = 0; k < mesh->attrDim; k += 1)
 			mesh->vert[mesh->attrDim * vert + k] = attr[k];
 }
 
 /* Returns a pointer to the vertth vertex. For example:
-	double *vertex13 = meshGetVertexPointer(&mesh, 13);
+	GLdouble *vertex13 = meshGetVertexPointer(&mesh, 13);
 	printf("x = %f, y = %f\n", vertex13[0], vertex13[1]); */
-double *meshGetVertexPointer(meshMesh *mesh, int vert) {
-	if (0 <= vert && vert < mesh->vertNum)
+GLdouble *meshGetVertexPointer(meshMesh *mesh, GLuint vert) {
+	if (vert < mesh->vertNum)
 		return &mesh->vert[vert * mesh->attrDim];
 	else
 		return NULL;
@@ -65,50 +66,70 @@ double *meshGetVertexPointer(meshMesh *mesh, int vert) {
 /* Deallocates the resources backing the mesh. This function must be called
 when you are finished using a mesh. */
 void meshDestroy(meshMesh *mesh) {
-	// Should test whether pointer NULL. If so, free and set to NULL.!!
 	free(mesh->tri);
 }
 
 
 
-/*** Rendering ***/
+/*** OpenGL ***/
 
-double meshTransformedVertices[renVERTNUMBOUND * renVARYDIMBOUND];
+/* Feel free to read from this struct's members, but don't write to them,
+except through accessor functions. */
+typedef struct meshGLMesh meshGLMesh;
+struct meshGLMesh {
+	GLuint triNum, vertNum, attrDim;
+	GLuint buffers[2];
+};
 
-double *meshGetTransformedVertexPointer(meshMesh *mesh, renRenderer *ren,
-		int vert) {
-	if (0 <= vert && vert < mesh->vertNum)
-		return &meshTransformedVertices[vert * ren->varyDim];
-	else
-		return NULL;
+/* Initializes an OpenGL mesh from a non-OpenGL mesh. */
+void meshGLInitialize(meshGLMesh *meshGL, meshMesh *mesh) {
+	meshGL->triNum = mesh->triNum;
+	meshGL->vertNum = mesh->vertNum;
+	meshGL->attrDim = mesh->attrDim;
+
+	glGenBuffers(2, meshGL->buffers);
+
+	glBindBuffer(GL_ARRAY_BUFFER, meshGL->buffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, meshGL->vertNum * meshGL->attrDim * sizeof(GLdouble),
+		(GLvoid *)mesh->vert, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshGL->buffers[1]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, meshGL->triNum * 3 * sizeof(GLuint),
+		(GLvoid *)mesh->tri, GL_STATIC_DRAW);
 }
 
-/* Renders the mesh. If the mesh and the renderer have differing values for
-attrDim, then prints an error message and does not render anything. */
-void meshRender(meshMesh *mesh, renRenderer *ren, double unif[],
-		texTexture *tex[]) {
-	if (mesh->attrDim != ren->attrDim) {
-		fprintf(stderr, "error: meshRender: ");
-		fprintf(stderr, "mesh attrDim = %d but renderer attrDim = %d.\n",
-			mesh->attrDim, ren->attrDim);
-	} else {
-		int i, *tri;
-		for (i = 0; i < mesh->vertNum; i += 1) {
-			ren->transformVertex(ren, unif, meshGetVertexPointer(mesh, i),
-				meshGetTransformedVertexPointer(mesh, ren, i));
-		}
-		// printf("transformVertex finishes\n");
+#define BUFFER_OFFSET(bytes) ((GLubyte*) NULL + (bytes))
 
-		for (i = 0; i < mesh->triNum; i += 1) {
-			tri = meshGetTrianglePointer(mesh, i);
-			clipRender(ren, unif, tex,
-				meshGetTransformedVertexPointer(mesh, ren, tri[0]),
-				meshGetTransformedVertexPointer(mesh, ren, tri[1]),
-				meshGetTransformedVertexPointer(mesh, ren, tri[2]));
-			// printf("a call of trirender finishes\n");
+/* Renders the already-initialized OpenGL mesh. attrDims is an array of length
+attrNum. For each i, its ith entry is the dimension of the ith attribute
+vector. Similarly, attrLocs is an array of length attrNum, giving the location
+of the ith attribute in the active OpenGL shader program. */
+void meshGLRender(meshGLMesh *meshGL, GLuint attrNum, GLuint attrDims[],
+		GLint attrLocs[]) {
+		int i;
+		int stride = 0;
+		for (i = 0; i < attrNum; i++) {
+				glEnableVertexAttribArray(attrLocs[i]);
+				stride += attrDims[i];
 		}
-		// printf("all 	triRender-s finish\n");
-	}
+		glBindBuffer(GL_ARRAY_BUFFER, meshGL->buffers[0]);
+		int offsetCount = 0;
+		for (i = 0; i < attrNum; i++) {
+				glVertexAttribPointer(attrLocs[i], attrDims[i], GL_DOUBLE, GL_FALSE,
+														stride * sizeof(GLdouble),
+														BUFFER_OFFSET(offsetCount * sizeof(GLdouble)));
+				offsetCount += attrDims[i];
+		}
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshGL->buffers[1]);
+		glDrawElements(GL_TRIANGLES, meshGL->triNum * 3, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+		for (i = 0; i < attrNum; i++) {
+				glDisableVertexAttribArray(attrLocs[i]);
+		}
+}
+
+/* Deallocates the resources backing the initialized OpenGL mesh. */
+void meshGLDestroy(meshGLMesh *meshGL) {
+    glDeleteBuffers(2, meshGL->buffers);
 }
 
 
@@ -118,13 +139,13 @@ void meshRender(meshMesh *mesh, renRenderer *ren, double unif[],
 /* Initializes a mesh to two triangles forming a rectangle of the given sides.
 The four attributes are X, Y, S, T. Do not call meshInitialize separately; it
 is called inside this function. Don't forget to call meshDestroy when done. */
-int meshInitializeRectangle(meshMesh *mesh, double left, double right,
-		double bottom, double top) {
-	int error = meshInitialize(mesh, 2, 4, 2 + 2);
+int meshInitializeRectangle(meshMesh *mesh, GLdouble left, GLdouble right,
+		GLdouble bottom, GLdouble top) {
+	GLuint error = meshInitialize(mesh, 2, 4, 2 + 2);
 	if (error == 0) {
 		meshSetTriangle(mesh, 0, 0, 1, 2);
 		meshSetTriangle(mesh, 1, 0, 2, 3);
-		double attr[4];
+		GLdouble attr[4];
 		vecSet(4, attr, left, bottom, 0.0, 0.0);
 		meshSetVertex(mesh, 0, attr);
 		vecSet(4, attr, right, bottom, 1.0, 0.0);
@@ -141,10 +162,10 @@ int meshInitializeRectangle(meshMesh *mesh, double left, double right,
 center (x, y) and radii rx, ry. The four attributes are X, Y, S, T. Do not call
 meshInitialize separately; it is called inside this function. Don't forget to
 call meshDestroy when done. */
-int meshInitializeEllipse(meshMesh *mesh, double x, double y, double rx,
-		double ry, int sideNum) {
-	int i, error;
-	double theta, cosTheta, sinTheta, attr[4] = {x, y, 0.5, 0.5};
+int meshInitializeEllipse(meshMesh *mesh, GLdouble x, GLdouble y,
+		GLdouble rx, GLdouble ry, GLuint sideNum) {
+	GLuint i, error;
+	GLdouble theta, cosTheta, sinTheta, attr[4] = {x, y, 0.5, 0.5};
 	error = meshInitialize(mesh, sideNum, sideNum + 1, 2 + 2);
 	if (error == 0) {
 		meshSetVertex(mesh, 0, attr);
@@ -168,8 +189,9 @@ int meshInitializeEllipse(meshMesh *mesh, double x, double y, double rx,
 /* Assumes that attributes 0, 1, 2 are XYZ. Assumes that the vertices of the
 triangle are in counter-clockwise order when viewed from 'outside' the
 triangle. Computes the outward-pointing unit normal vector for the triangle. */
-void meshTrueNormal(double a[], double b[], double c[], double normal[3]) {
-	double bMinusA[3], cMinusA[3];
+void meshTrueNormal(GLdouble a[], GLdouble b[], GLdouble c[],
+		GLdouble normal[3]) {
+	GLdouble bMinusA[3], cMinusA[3];
 	vecSubtract(3, b, a, bMinusA);
 	vecSubtract(3, c, a, cMinusA);
 	vec3Cross(bMinusA, cMinusA, normal);
@@ -179,9 +201,9 @@ void meshTrueNormal(double a[], double b[], double c[], double normal[3]) {
 /* Assumes that attributes 0, 1, 2 are XYZ. Sets attributes n, n + 1, n + 2 to
 flat-shaded normals. If a vertex belongs to more than triangle, then some
 unspecified triangle's normal wins. */
-void meshFlatNormals(meshMesh *mesh, int n) {
-	int i, *tri;
-	double *a, *b, *c, normal[3];
+void meshFlatNormals(meshMesh *mesh, GLuint n) {
+	GLuint i, *tri;
+	GLdouble *a, *b, *c, normal[3];
 	for (i = 0; i < mesh->triNum; i += 1) {
 		tri = meshGetTrianglePointer(mesh, i);
 		a = meshGetVertexPointer(mesh, tri[0]);
@@ -197,15 +219,14 @@ void meshFlatNormals(meshMesh *mesh, int n) {
 /* Assumes that attributes 0, 1, 2 are XYZ. Sets attributes n, n + 1, n + 2 to
 smooth-shaded normals. Does not do anything special to handle multiple vertices
 with the same coordinates. */
-void meshSmoothNormals(meshMesh *mesh, int n) {
-	int i, *tri;
-	double *a, *b, *c, normal[3] = {0.0, 0.0, 0.0};
+void meshSmoothNormals(meshMesh *mesh, GLuint n) {
+	GLuint i, *tri;
+	GLdouble *a, *b, *c, normal[3] = {0.0, 0.0, 0.0};
 	/* Zero the normals. */
 	for (i = 0; i < mesh->vertNum; i += 1) {
 		a = meshGetVertexPointer(mesh, i);
 		vecCopy(3, normal, &a[n]);
 	}
-
 	/* For each triangle, add onto the normal at each of its vertices. */
 	for (i = 0; i < mesh->triNum; i += 1) {
 		tri = meshGetTrianglePointer(mesh, i);
@@ -229,9 +250,9 @@ are XYZ position, ST texture, and NOP unit normal vector. The normals are
 discontinuous at the edges (flat shading, not smooth). To facilitate this, some
 vertices have equal XYZ but different NOP, for 24 vertices in all. Don't forget
 to meshDestroy when finished. */
-int meshInitializeBox(meshMesh *mesh, double left, double right, double bottom,
-		double top, double base, double lid) {
-	int error = meshInitialize(mesh, 12, 24, 3 + 2 + 3);
+int meshInitializeBox(meshMesh *mesh, GLdouble left, GLdouble right,
+		GLdouble bottom, GLdouble top, GLdouble base, GLdouble lid) {
+	GLuint error = meshInitialize(mesh, 12, 24, 3 + 2 + 3);
 	if (error == 0) {
 		/* Make the triangles. */
 		meshSetTriangle(mesh, 0, 0, 2, 1);
@@ -247,7 +268,7 @@ int meshInitializeBox(meshMesh *mesh, double left, double right, double bottom,
 		meshSetTriangle(mesh, 10, 20, 21, 22);
 		meshSetTriangle(mesh, 11, 20, 22, 23);
 		/* Make the vertices after 0, using vertex 0 as temporary storage. */
-		double *v = mesh->vert;
+		GLdouble *v = mesh->vert;
 		vecSet(8, v, right, bottom, base, 1.0, 0.0, 0.0, 0.0, -1.0);
 		meshSetVertex(mesh, 1, v);
 		vecSet(8, v, right, top, base, 1.0, 1.0, 0.0, 0.0, -1.0);
@@ -302,10 +323,10 @@ int meshInitializeBox(meshMesh *mesh, double left, double right, double bottom,
 
 /* Rotates a 2-dimensional vector through an angle. The input can safely alias
 the output. */
-void meshRotateVector(double theta, double v[2], double vRot[2]) {
-	double cosTheta = cos(theta);
-	double sinTheta = sin(theta);
-	double vRot0 = cosTheta * v[0] - sinTheta * v[1];
+void meshRotateVector(GLdouble theta, GLdouble v[2], GLdouble vRot[2]) {
+	GLdouble cosTheta = cos(theta);
+	GLdouble sinTheta = sin(theta);
+	GLdouble vRot0 = cosTheta * v[0] - sinTheta * v[1];
 	vRot[1] = sinTheta * v[0] + cosTheta * v[1];
 	vRot[0] = vRot0;
 }
@@ -318,9 +339,9 @@ should be in ascending or descending order. The sideNum parameter controls the
 fineness of the mesh. The attributes are XYZ position, ST texture, and NOP unit
 normal vector. The normals are smooth. Don't forget to meshDestroy when
 finished. */
-int meshInitializeRevolution(meshMesh *mesh, int zNum, double z[],
-		double r[], double t[], int sideNum) {
-	int i, j, error;
+int meshInitializeRevolution(meshMesh *mesh, GLuint zNum, GLdouble z[],
+		GLdouble r[], GLdouble t[], GLuint sideNum) {
+	GLuint i, j, error;
 	error = meshInitialize(mesh, (zNum - 2) * sideNum * 2,
 		(zNum - 2) * (sideNum + 1) + 2, 3 + 2 + 3);
 	if (error == 0) {
@@ -345,8 +366,8 @@ int meshInitializeRevolution(meshMesh *mesh, int zNum, double z[],
 					j * (sideNum + 1) + 1 + i + 1);
 			}
 		/* Make the vertices, using vertex 0 as temporary storage. */
-		double *v = mesh->vert;
-		double p[3], q[3], o[3];
+		GLdouble *v = mesh->vert;
+		GLdouble p[3], q[3], o[3];
 		for (j = 1; j <= zNum - 2; j += 1) {
 			// Form the sideNum + 1 vertices in the jth layer.
 			vecSet(3, p, z[j + 1] - z[j], 0.0, r[j] - r[j + 1]);
@@ -379,20 +400,61 @@ int meshInitializeRevolution(meshMesh *mesh, int zNum, double z[],
 and layerNum parameters control the fineness of the mesh. The attributes are
 XYZ position, ST texture, and NOP unit normal vector. The normals are smooth.
 Don't forget to meshDestroy when finished. */
-int meshInitializeSphere(meshMesh *mesh, double r, int layerNum, int sideNum) {
-	int error, i;
-	double *ts = (double *)malloc((layerNum + 1) * 3 * sizeof(double));
+int meshInitializeSphere(meshMesh *mesh, GLdouble r, GLuint layerNum,
+		GLuint sideNum) {
+	GLuint error, i;
+	GLdouble *ts = (GLdouble *)malloc((layerNum + 1) * 3 * sizeof(GLdouble));
 	if (ts == NULL)
 		return 1;
 	else {
-		double *zs = &ts[layerNum + 1];
-		double *rs = &ts[2 * layerNum + 2];
+		GLdouble *zs = &ts[layerNum + 1];
+		GLdouble *rs = &ts[2 * layerNum + 2];
 		for (i = 0; i <= layerNum; i += 1) {
-			ts[i] = (double)i / layerNum;
+			ts[i] = (GLdouble)i / layerNum;
 			zs[i] = -r * cos(ts[i] * M_PI);
 			rs[i] = r * sin(ts[i] * M_PI);
 		}
 		error = meshInitializeRevolution(mesh, layerNum + 1, zs, rs, ts,
+			sideNum);
+		free(ts);
+		return error;
+	}
+}
+
+/* Builds a mesh for a circular cylinder with spherical caps, centered at the
+origin, of radius r and length l > 2 * r. The sideNum and layerNum parameters
+control the fineness of the mesh. The attributes are XYZ position, ST texture,
+and NOP unit normal vector. The normals are smooth. Don't forget to meshDestroy
+when finished. */
+int meshInitializeCapsule(meshMesh *mesh, GLdouble r, GLdouble l,
+		GLuint layerNum, GLuint sideNum) {
+	GLuint error, i;
+	GLdouble theta;
+	GLdouble *ts = (GLdouble *)malloc((6 * layerNum + 6) * sizeof(GLdouble));
+	if (ts == NULL)
+		return 1;
+	else {
+		GLdouble *zs = &ts[2 * layerNum + 2];
+		GLdouble *rs = &ts[4 * layerNum + 4];
+		zs[0] = -l / 2.0;
+		rs[0] = 0.0;
+		ts[0] = 0.0;
+		for (i = 1; i <= layerNum; i += 1) {
+			theta = M_PI / 2.0 * (3 + i / (GLdouble)layerNum);
+			zs[i] = -l / 2.0 + r + r * sin(theta);
+			rs[i] = r * cos(theta);
+			ts[i] = (zs[i] + l / 2.0) / l;
+		}
+		for (i = 0; i < layerNum; i += 1) {
+			theta = M_PI / 2.0 * i / (GLdouble)layerNum;
+			zs[layerNum + 1 + i] = l / 2.0 - r + r * sin(theta);
+			rs[layerNum + 1 + i] = r * cos(theta);
+			ts[layerNum + 1 + i] = (zs[layerNum + 1 + i] + l / 2.0) / l;
+		}
+		zs[2 * layerNum + 1] = l / 2.0;
+		rs[2 * layerNum + 1] = 0.0;
+		ts[2 * layerNum + 1] = 1.0;
+		error = meshInitializeRevolution(mesh, 2 * layerNum + 2, zs, rs, ts,
 			sideNum);
 		free(ts);
 		return error;
@@ -406,16 +468,16 @@ parameter controls the spacing of the X- and Y-coordinates of the vertices. The
 attributes are XYZ position, ST texture, and NOP unit normal vector. Don't
 forget to call meshDestroy when finished with the mesh. To understand the exact
 layout of the data, try this example code:
-double zs[3][4] = {
+GLdouble zs[3][4] = {
 	{10.0, 9.0, 7.0, 6.0},
 	{6.0, 5.0, 3.0, 1.0},
 	{4.0, 3.0, -1.0, -2.0}};
-int error = meshInitializeLandscape(&mesh, 3, 4, 20.0, (double *)zs); */
-int meshInitializeLandscape(meshMesh *mesh, int width, int height,
-		double spacing, double *data) {
-	int i, j, error;
-	int a, b, c, d;
-	double *vert;
+int error = meshInitializeLandscape(&mesh, 3, 4, 20.0, (GLdouble *)zs); */
+int meshInitializeLandscape(meshMesh *mesh, GLuint width, GLuint height,
+		GLdouble spacing, GLdouble *data) {
+	GLuint i, j, error;
+	GLuint a, b, c, d;
+	GLdouble *vert, diffSWNE, diffSENW;
 	error = meshInitialize(mesh, 2 * (width - 1) * (height - 1),
 		width * height, 3 + 2 + 3);
 	if (error == 0) {
@@ -424,23 +486,75 @@ int meshInitializeLandscape(meshMesh *mesh, int width, int height,
 			for (j = 0; j < height; j += 1) {
 				vert = meshGetVertexPointer(mesh, i * height + j);
 				vecSet(3 + 2 + 3, vert, i * spacing, j * spacing,
-					data[i * height + j], i / (width - 1.0),
-					j / (height - 1.0), 0.0, 0.0, 0.0);
-				/*vecSet(3 + 2 + 3, vert, i * spacing, j * spacing,
-					data[i * height + j], (double)i, (double)j, 0.0, 0.0, 0.0);*/
+					data[i * height + j], (GLdouble)i, (GLdouble)j,
+					0.0, 0.0, 0.0);
 			}
 		/* Build the triangles. */
 		for (i = 0; i < width - 1; i += 1)
 			for (j = 0; j < height - 1; j += 1) {
-				int index = 2 * (i * (height - 1) + j);
+				GLuint index = 2 * (i * (height - 1) + j);
 				a = i * height + j;
 				b = (i + 1) * height + j;
 				c = (i + 1) * height + (j + 1);
 				d = i * height + (j + 1);
-				meshSetTriangle(mesh, index, a, b, c);
-				meshSetTriangle(mesh, index + 1, a, c, d);
+				diffSWNE = fabs(meshGetVertexPointer(mesh, a)[2] -
+					meshGetVertexPointer(mesh, c)[2]);
+				diffSENW = fabs(meshGetVertexPointer(mesh, b)[2] -
+					meshGetVertexPointer(mesh, d)[2]);
+				if (diffSENW < diffSWNE) {
+					meshSetTriangle(mesh, index, d, a, b);
+					meshSetTriangle(mesh, index + 1, b, c, d);
+				} else {
+					meshSetTriangle(mesh, index, a, b, c);
+					meshSetTriangle(mesh, index + 1, a, c, d);
+				}
 			}
 		/* Set the normals. */
+		meshSmoothNormals(mesh, 5);
+	}
+	return error;
+}
+
+/* Given a landscape, such as that built by meshInitializeLandscape. Builds a
+new landscape mesh by extracting triangles based on how horizontal they are. If
+noMoreThan is true, then triangles are kept that deviate from horizontal by no more than angle. If noMoreThan is false, then triangles are kept that deviate
+from horizontal by more than angle. Don't forget to call meshDestroy when
+finished. Warning: May contain extraneous vertices not used by any triangle. */
+int meshInitializeDissectedLandscape(meshMesh *mesh, meshMesh *land,
+		GLdouble angle, GLuint noMoreThan) {
+	GLuint error, i, j = 0, triNum = 0;
+	GLuint *tri, *newTri;
+	GLdouble normal[3];
+	/* Count the triangles that are nearly horizontal. */
+	for (i = 0; i < land->triNum; i += 1) {
+		tri = meshGetTrianglePointer(land, i);
+		meshTrueNormal(meshGetVertexPointer(land, tri[0]),
+			meshGetVertexPointer(land, tri[1]),
+			meshGetVertexPointer(land, tri[2]), normal);
+		if ((noMoreThan && normal[2] >= cos(angle)) ||
+				(!noMoreThan && normal[2] < cos(angle)))
+			triNum += 1;
+	}
+	error = meshInitialize(mesh, triNum, land->vertNum, 3 + 2 + 3);
+	if (error == 0) {
+		/* Copy all of the vertices. */
+		vecCopy(land->vertNum * (3 + 2 + 3), land->vert, mesh->vert);
+		/* Copy just the horizontal triangles. */
+		for (i = 0; i < land->triNum; i += 1) {
+			tri = meshGetTrianglePointer(land, i);
+			meshTrueNormal(meshGetVertexPointer(land, tri[0]),
+				meshGetVertexPointer(land, tri[1]),
+				meshGetVertexPointer(land, tri[2]), normal);
+			if ((noMoreThan && normal[2] >= cos(angle)) ||
+					(!noMoreThan && normal[2] < cos(angle))) {
+				newTri = meshGetTrianglePointer(mesh, j);
+				newTri[0] = tri[0];
+				newTri[1] = tri[1];
+				newTri[2] = tri[2];
+				j += 1;
+			}
+		}
+		/* Reset the normals, to make the cliff edges appear sharper. */
 		meshSmoothNormals(mesh, 5);
 	}
 	return error;
