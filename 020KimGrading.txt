@@ -1,5 +1,0 @@
-Ju Yun Kim
-Grade: 11/12
-******************
-Try simplify the algorithm for sorting the coordinates. Many of the conditionals can be combined.
-1. Avoid division by 0 error at ln133 bb0 - cc0 might be 0. (-1)
