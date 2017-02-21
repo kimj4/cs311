@@ -77,7 +77,9 @@ void meshDestroy(meshMesh *mesh) {
 except through accessor functions. */
 typedef struct meshGLMesh meshGLMesh;
 struct meshGLMesh {
-	GLuint triNum, vertNum, attrDim;
+	GLuint triNum, vertNum, vaoNum, attrNum, attrDim;
+  GLuint *attrDims;
+  GLuint *vaos;
 	GLuint buffers[2];
 };
 
@@ -86,7 +88,7 @@ vertex array objects attached to this mesh storage. Typically vaoNum equals the
 number of distinct shader programs that will need to draw the mesh. Returns 0
 on success, non-zero on failure. */
 int meshGLInitialize(meshGLMesh *meshGL, meshMesh *mesh, GLuint attrNum,
-        GLuint attrDims[], GLuint vaoNum) {
+                     GLuint attrDims[], GLuint vaoNum) {
     meshGL->attrDims = (GLuint *)malloc((attrNum + vaoNum) * sizeof(GLuint));
     if (meshGL->attrDims == NULL)
         return 1;
@@ -107,40 +109,93 @@ int meshGLInitialize(meshGLMesh *meshGL, meshMesh *mesh, GLuint attrNum,
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshGL->buffers[1]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, meshGL->triNum * 3 * sizeof(GLuint),
         (GLvoid *)(mesh->tri), GL_STATIC_DRAW);
-    r
+    return 0;
+  }
 
 #define BUFFER_OFFSET(bytes) ((GLubyte*) NULL + (bytes))
+
+/* attrLocs is meshGL->attrNum locations in the active shader program. index is
+an integer between 0 and meshGL->voaNum - 1, inclusive. This function
+initializes the VAO at that index in the meshGL's array of VAOs, so that the
+VAO can render using those locations. */
+void meshGLVAOInitialize(meshGLMesh *meshGL, GLuint index, GLint attrLocs[]) {
+	if ((index < 0) || (index > meshGL->vaoNum - 1)) {
+		printf("Mesh Error: meshGLVAOInitialize index out of range\n");
+		return;
+	}
+	// bind to edit
+	glBindVertexArray(meshGL->vaos[index]);
+	int i;
+	int stride = 0;
+	// enable locs
+	for (i = 0; i < meshGL->attrNum; i++) {
+			glEnableVertexAttribArray(attrLocs[i]);
+			stride += meshGL->attrDims[i];
+	}
+
+	// let VAO know about the attribute arrays
+	glBindBuffer(GL_ARRAY_BUFFER, meshGL->buffers[0]);
+	int offsetCount = 0;
+	for (i = 0; i < meshGL->attrNum; i ++) {
+			glVertexAttribPointer(attrLocs[i], meshGL->attrDims[i], GL_DOUBLE, GL_FALSE,
+														stride * sizeof(GLdouble),
+														BUFFER_OFFSET(offsetCount * sizeof(GLdouble)));
+			offsetCount += meshGL->attrDims[i]
+	}
+
+	// disable locs
+	for (i = 0; i < meshGL->attrNum; i++) {
+			glDisableVertexAttribArray(attrLocs[i]);
+	}
+
+	// tell VAO about array of triangle indices (but don't draw yet)
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshGL->buffers[1]);
+	// unbind VAO by binding to trivial VAO
+	glBindVertexArray(0);
+}
 
 /* Renders the already-initialized OpenGL mesh. attrDims is an array of length
 attrNum. For each i, its ith entry is the dimension of the ith attribute
 vector. Similarly, attrLocs is an array of length attrNum, giving the location
 of the ith attribute in the active OpenGL shader program. */
-void meshGLRender(meshGLMesh *meshGL, GLuint attrNum, GLuint attrDims[],
-		GLint attrLocs[]) {
-		int i;
-		int stride = 0;
-		for (i = 0; i < attrNum; i++) {
-				glEnableVertexAttribArray(attrLocs[i]);
-				stride += attrDims[i];
-		}
-		glBindBuffer(GL_ARRAY_BUFFER, meshGL->buffers[0]);
-		int offsetCount = 0;
-		for (i = 0; i < attrNum; i++) {
-				glVertexAttribPointer(attrLocs[i], attrDims[i], GL_DOUBLE, GL_FALSE,
-														stride * sizeof(GLdouble),
-														BUFFER_OFFSET(offsetCount * sizeof(GLdouble)));
-				offsetCount += attrDims[i];
-		}
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshGL->buffers[1]);
-		glDrawElements(GL_TRIANGLES, meshGL->triNum * 3, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
-		for (i = 0; i < attrNum; i++) {
-				glDisableVertexAttribArray(attrLocs[i]);
-		}
+void meshGLRender(meshGLMesh *meshGL, GLuint index) {
+		// === before OpenGL 3.2 Conversion === //
+		// int i;
+		// int stride = 0;
+		// for (i = 0; i < attrNum; i++) {
+		// 		glEnableVertexAttribArray(attrLocs[i]);
+		// 		stride += attrDims[i];
+		// }
+		// glBindBuffer(GL_ARRAY_BUFFER, meshGL->buffers[0]);
+		// int offsetCount = 0;
+		// for (i = 0; i < attrNum; i++) {
+		// 		glVertexAttribPointer(attrLocs[i], attrDims[i], GL_DOUBLE, GL_FALSE,
+		// 												stride * sizeof(GLdouble),
+		// 												BUFFER_OFFSET(offsetCount * sizeof(GLdouble)));
+		// 		offsetCount += attrDims[i];
+		// }
+		// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshGL->buffers[1]);
+		// glDrawElements(GL_TRIANGLES, meshGL->triNum * 3, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+		// for (i = 0; i < attrNum; i++) {
+		// 		glDisableVertexAttribArray(attrLocs[i]);
+		// }
+
+		glBindVertexArray(meshGL->vaos[index]);
+		glDrawElements(GL_TRIANGLES, triNum * 3, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+		glBindVertexArray(0);
 }
 
 /* Deallocates the resources backing the initialized OpenGL mesh. */
 void meshGLDestroy(meshGLMesh *meshGL) {
-    glDeleteBuffers(2, meshGL->buffers);
+		// delete buffers
+		glDeleteBuffers(2, meshGL->buffers);
+		// delete VAOs
+		int i;
+		for (i = 0; i < meshGL->vaoNum; i ++) {
+			glDeleteVertexArrays(1, meshGL->vaos[i]);
+		}
+		// free the memory that was malloc'd in meshGLInitialize
+		free(meshGL->attrDims);
 }
 
 
