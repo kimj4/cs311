@@ -78,8 +78,8 @@ except through accessor functions. */
 typedef struct meshGLMesh meshGLMesh;
 struct meshGLMesh {
 	GLuint triNum, vertNum, vaoNum, attrNum, attrDim;
-  GLuint *attrDims;
-  GLuint *vaos;
+  	GLuint *attrDims;
+  	GLuint *vaos;
 	GLuint buffers[2];
 };
 
@@ -119,7 +119,7 @@ an integer between 0 and meshGL->voaNum - 1, inclusive. This function
 initializes the VAO at that index in the meshGL's array of VAOs, so that the
 VAO can render using those locations. */
 void meshGLVAOInitialize(meshGLMesh *meshGL, GLuint index, GLint attrLocs[]) {
-	if ((index < 0) || (index > meshGL->vaoNum - 1)) {
+	if (index > meshGL->vaoNum - 1) {
 		printf("Mesh Error: meshGLVAOInitialize index out of range\n");
 		return;
 	}
@@ -140,7 +140,7 @@ void meshGLVAOInitialize(meshGLMesh *meshGL, GLuint index, GLint attrLocs[]) {
 			glVertexAttribPointer(attrLocs[i], meshGL->attrDims[i], GL_DOUBLE, GL_FALSE,
 														stride * sizeof(GLdouble),
 														BUFFER_OFFSET(offsetCount * sizeof(GLdouble)));
-			offsetCount += meshGL->attrDims[i]
+			offsetCount += meshGL->attrDims[i];
 	}
 
 	// disable locs
@@ -181,7 +181,7 @@ void meshGLRender(meshGLMesh *meshGL, GLuint index) {
 		// }
 
 		glBindVertexArray(meshGL->vaos[index]);
-		glDrawElements(GL_TRIANGLES, triNum * 3, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+		glDrawElements(GL_TRIANGLES, meshGL->triNum * 3, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
 		glBindVertexArray(0);
 }
 
@@ -192,7 +192,7 @@ void meshGLDestroy(meshGLMesh *meshGL) {
 		// delete VAOs
 		int i;
 		for (i = 0; i < meshGL->vaoNum; i ++) {
-			glDeleteVertexArrays(1, meshGL->vaos[i]);
+			glDeleteVertexArrays(1, &meshGL->vaos[i]);
 		}
 		// free the memory that was malloc'd in meshGLInitialize
 		free(meshGL->attrDims);

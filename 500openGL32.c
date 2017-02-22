@@ -148,14 +148,14 @@ int initializeShaderProgram(void) {
 	return (program == 0);
 }
 
-#include "100vector.c"
-#include "130matrix.c"
+#include "530vector.c"
+#include "520matrix.c"
 
-void mat44OpenGL(double m[4][4], GLfloat openGL[4][4]) {
-	for (int i = 0; i < 4; i += 1)
-		for (int j = 0; j < 4; j += 1)
-			openGL[i][j] = m[j][i];
-}
+// void mat44OpenGL(double m[4][4], GLfloat openGL[4][4]) {
+// 	for (int i = 0; i < 4; i += 1)
+// 		for (int j = 0; j < 4; j += 1)
+// 			openGL[i][j] = m[j][i];
+// }
 
 void render(void) {
 	/* The first part of this function is the same as in 500openGL20b.c. */

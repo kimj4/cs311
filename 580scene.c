@@ -157,47 +157,47 @@ void sceneRender(sceneNode *node, GLdouble parent[4][4], GLint modelingLoc,
 		GLuint attrNum, GLuint attrDims[], GLint attrLocs[], GLuint VAOindex) {
 	int i;
 
-	// render the textures (Josh says to assume max of 8 concurrent textures)
-	for (i = 0; i < node->texNum; i++) {
-		switch(i) {
-			case(0): {
-				texRender(node->tex[i], GL_TEXTURE0, i, textureLocs[i]);
-				break;
-			}
-			case(1): {
-				texRender(node->tex[i], GL_TEXTURE1, i, textureLocs[i]);
-				break;
-			}
-			case(2): {
-				texRender(node->tex[i], GL_TEXTURE2, i, textureLocs[i]);
-				break;
-			}
-			case(3): {
-				texRender(node->tex[i], GL_TEXTURE3, i, textureLocs[i]);
-				break;
-			}
-			case(4): {
-				texRender(node->tex[i], GL_TEXTURE4, i, textureLocs[i]);
-				break;
-			}
-			case(5): {
-				texRender(node->tex[i], GL_TEXTURE5, i, textureLocs[i]);
-				break;
-			}
-			case(6): {
-				texRender(node->tex[i], GL_TEXTURE6, i, textureLocs[i]);
-				break;
-			}
-			case(7): {
-				texRender(node->tex[i], GL_TEXTURE7, i, textureLocs[i]);
-				break;
-			}
-			default: {
-				printf("Scene Error: there are more than 8 textures.\n");
-				break;
-			}
-		}
-	}
+	// // render the textures (Josh says to assume max of 8 concurrent textures)
+	// for (i = 0; i < node->texNum; i++) {
+	// 	switch(i) {
+	// 		case(0): {
+	// 			texRender(node->tex[i], GL_TEXTURE0, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(1): {
+	// 			texRender(node->tex[i], GL_TEXTURE1, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(2): {
+	// 			texRender(node->tex[i], GL_TEXTURE2, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(3): {
+	// 			texRender(node->tex[i], GL_TEXTURE3, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(4): {
+	// 			texRender(node->tex[i], GL_TEXTURE4, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(5): {
+	// 			texRender(node->tex[i], GL_TEXTURE5, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(6): {
+	// 			texRender(node->tex[i], GL_TEXTURE6, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		case(7): {
+	// 			texRender(node->tex[i], GL_TEXTURE7, i, textureLocs[i]);
+	// 			break;
+	// 		}
+	// 		default: {
+	// 			printf("Scene Error: there are more than 8 textures.\n");
+	// 			break;
+	// 		}
+	// 	}
+	// }
 
 	/* Set the uniform modeling matrix. */
 	GLdouble selfIsom[4][4], parentMultiplied[4][4];
