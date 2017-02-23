@@ -104,11 +104,11 @@ int meshGLInitialize(meshGLMesh *meshGL, meshMesh *mesh, GLuint attrNum,
     glGenBuffers(2, meshGL->buffers);
     glBindBuffer(GL_ARRAY_BUFFER, meshGL->buffers[0]);
     glBufferData(GL_ARRAY_BUFFER,
-        meshGL->vertNum * meshGL->attrDim * sizeof(GLdouble),
-        (GLvoid *)(mesh->vert), GL_STATIC_DRAW);
+        		 meshGL->vertNum * meshGL->attrDim * sizeof(GLdouble),
+        		 (GLvoid *)(mesh->vert), GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshGL->buffers[1]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, meshGL->triNum * 3 * sizeof(GLuint),
-        (GLvoid *)(mesh->tri), GL_STATIC_DRAW);
+        		 (GLvoid *)(mesh->tri), GL_STATIC_DRAW);
     return 0;
   }
 
@@ -127,25 +127,20 @@ void meshGLVAOInitialize(meshGLMesh *meshGL, GLuint index, GLint attrLocs[]) {
 	glBindVertexArray(meshGL->vaos[index]);
 	int i;
 	int stride = 0;
-	// enable locs
-	for (i = 0; i < meshGL->attrNum; i++) {
-			glEnableVertexAttribArray(attrLocs[i]);
-			stride += meshGL->attrDims[i];
+
+	// calculate stride for use in glVertexAttribPointer
+	for ( i = 0; i < meshGL->attrNum; i++) {
+		stride += meshGL->attrDims[i];
 	}
 
-	// let VAO know about the attribute arrays
-	glBindBuffer(GL_ARRAY_BUFFER, meshGL->buffers[0]);
+
 	int offsetCount = 0;
-	for (i = 0; i < meshGL->attrNum; i ++) {
-			glVertexAttribPointer(attrLocs[i], meshGL->attrDims[i], GL_DOUBLE, GL_FALSE,
-														stride * sizeof(GLdouble),
-														BUFFER_OFFSET(offsetCount * sizeof(GLdouble)));
-			offsetCount += meshGL->attrDims[i];
-	}
-
-	// disable locs
-	for (i = 0; i < meshGL->attrNum; i++) {
-			glDisableVertexAttribArray(attrLocs[i]);
+	for ( i = 0; i < meshGL->attrNum; i++) {
+		glEnableVertexAttribArray(attrLocs[i]);
+		glVertexAttribPointer(attrLocs[i], meshGL->attrDims[i], GL_DOUBLE, GL_FALSE,
+							  stride * sizeof(GLdouble),
+							  BUFFER_OFFSET(offsetCount * sizeof(GLdouble)));
+		offsetCount += meshGL->attrDims[i];
 	}
 
 	// tell VAO about array of triangle indices (but don't draw yet)
@@ -159,27 +154,6 @@ attrNum. For each i, its ith entry is the dimension of the ith attribute
 vector. Similarly, attrLocs is an array of length attrNum, giving the location
 of the ith attribute in the active OpenGL shader program. */
 void meshGLRender(meshGLMesh *meshGL, GLuint index) {
-		// === before OpenGL 3.2 Conversion === //
-		// int i;
-		// int stride = 0;
-		// for (i = 0; i < attrNum; i++) {
-		// 		glEnableVertexAttribArray(attrLocs[i]);
-		// 		stride += attrDims[i];
-		// }
-		// glBindBuffer(GL_ARRAY_BUFFER, meshGL->buffers[0]);
-		// int offsetCount = 0;
-		// for (i = 0; i < attrNum; i++) {
-		// 		glVertexAttribPointer(attrLocs[i], attrDims[i], GL_DOUBLE, GL_FALSE,
-		// 												stride * sizeof(GLdouble),
-		// 												BUFFER_OFFSET(offsetCount * sizeof(GLdouble)));
-		// 		offsetCount += attrDims[i];
-		// }
-		// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshGL->buffers[1]);
-		// glDrawElements(GL_TRIANGLES, meshGL->triNum * 3, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
-		// for (i = 0; i < attrNum; i++) {
-		// 		glDisableVertexAttribArray(attrLocs[i]);
-		// }
-
 		glBindVertexArray(meshGL->vaos[index]);
 		glDrawElements(GL_TRIANGLES, meshGL->triNum * 3, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
 		glBindVertexArray(0);
