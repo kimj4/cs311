@@ -1,0 +1,34 @@
+1. names of project members
+Ju Yun Kim, Dmitry Tensyn
+
+2. if solo, then the reason for being solo
+N/A
+
+3. topic
+Physics Engines
+
+4. what software the project will use, usually including an OpenGL version number and why that version is 	   adequate/necessary
+	=== libraries ===
+	- Given: ODE: Open Dynamics Engine
+	- look into later: Open Source Physics
+	- Bullet Physics Library (might be an engine)
+		- (documentation?) http://bulletphysics.org/Bullet/BulletFull/index.html
+	- ReactPhysics3D
+		- (user manual) http://www.reactphysics3d.com/documentation/manual/ReactPhysics3D-UserManual.pdf
+	- physx (needs registration)
+	- havok (probably an engine)
+	- RandyGaul/qu3e (ver 1.01) (https://github.com/RandyGaul/qu3e)		
+
+5. whether the software works on our lab machines; if not, then a plan for how the project can happen
+   if other people's software is being used, then an explanation of how the students will demonstrate that they understand the project, rather than treating the software as a "black box" that does the project for them
+
+- compatibility is probably okay. If software doesn't work on lab machines, we have computers that run all 	three OSs so that's fine
+
+- how to learn material?
+	- choose an open source lib
+	- maybe make variations of certain functions in the library and demonstrate what happens
+	- make several demos that demonstrate physical+graphical concepts
+	- in our presentations talk about how certain things are implemented high level
+		 - sort of like lighting (we are not modeling ambient light super accurately)
+
+
