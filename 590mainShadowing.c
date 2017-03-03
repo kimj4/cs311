@@ -8,8 +8,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <GL/gl3w.h>
-#include </usr/local/include/GLFW/glfw3.h>
-// #include "/usr/local/include/GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 #include <sys/time.h>
 
 double getTime(void) {
