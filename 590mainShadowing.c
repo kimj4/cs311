@@ -35,9 +35,13 @@ sceneNode nodeH, nodeV, nodeW, nodeT, nodeL;
 /* We need just one shadow program, because all of our meshes have the same
 attribute structure. */
 shadowProgram sdwProg;
+shadowProgram sdwProg2;
 /* We need one shadow map per shadow-casting light. */
 lightLight light;
 shadowMap sdwMap;
+
+lightLight light2;
+shadowMap sdwMap2;
 /* The main shader program has extra hooks for shadowing. */
 GLuint program;
 GLint viewingLoc, modelingLoc;
@@ -46,6 +50,9 @@ GLint attrLocs[3];
 GLint lightPosLoc, lightColLoc, lightAttLoc, lightDirLoc, lightCosLoc;
 GLint camPosLoc;
 GLint viewingSdwLoc, textureSdwLoc;
+//TODO: do i need two cameras?
+GLint lightPosLoc2, lightColLoc2, lightAttLoc2, lightDirLoc2, lightCosLoc2;
+GLint viewingSdwLoc2, textureSdwLoc2;
 
 void handleError(int error, const char *description) {
 	fprintf(stderr, "handleError: %d\n%s\n", error, description);
@@ -154,9 +161,11 @@ int initializeScene(void) {
 	if (meshInitializeDissectedLandscape(&mesh, &meshLand, M_PI / 3.0, 1) != 0)
 		return 7;
 	/* There are now two VAOs per mesh. */
-	meshGLInitialize(&meshH, &mesh, 3, attrDims, 2);
+	// changes: there are 3 to accomodate 2 light sources
+	meshGLInitialize(&meshH, &mesh, 3, attrDims, 3);
 	meshGLVAOInitialize(&meshH, 0, attrLocs);
 	meshGLVAOInitialize(&meshH, 1, sdwProg.attrLocs);
+	meshGLVAOInitialize(&meshH, 2, sdwProg2.attrLocs);
 	meshDestroy(&mesh);
 	if (meshInitializeDissectedLandscape(&mesh, &meshLand, M_PI / 3.0, 0) != 0)
 		return 8;
@@ -169,27 +178,31 @@ int initializeScene(void) {
 		vert[3] = (vert[0] * normal[0] + vert[1] * normal[1]) / 20.0;
 		vert[4] = vert[2] / 20.0;
 	}
-	meshGLInitialize(&meshV, &mesh, 3, attrDims, 2);
+	meshGLInitialize(&meshV, &mesh, 3, attrDims, 3);
 	meshGLVAOInitialize(&meshV, 0, attrLocs);
 	meshGLVAOInitialize(&meshV, 1, sdwProg.attrLocs);
+	meshGLVAOInitialize(&meshV, 2, sdwProg2.attrLocs);
 	meshDestroy(&mesh);
 	if (meshInitializeLandscape(&mesh, 12, 12, 5.0, (double *)ws) != 0)
 		return 9;
-	meshGLInitialize(&meshW, &mesh, 3, attrDims, 2);
+	meshGLInitialize(&meshW, &mesh, 3, attrDims, 3);
 	meshGLVAOInitialize(&meshW, 0, attrLocs);
 	meshGLVAOInitialize(&meshW, 1, sdwProg.attrLocs);
+	meshGLVAOInitialize(&meshW, 2, sdwProg2.attrLocs);
 	meshDestroy(&mesh);
 	if (meshInitializeCapsule(&mesh, 1.0, 10.0, 1, 8) != 0)
 		return 10;
-	meshGLInitialize(&meshT, &mesh, 3, attrDims, 2);
+	meshGLInitialize(&meshT, &mesh, 3, attrDims, 3);
 	meshGLVAOInitialize(&meshT, 0, attrLocs);
 	meshGLVAOInitialize(&meshT, 1, sdwProg.attrLocs);
+	meshGLVAOInitialize(&meshT, 2, sdwProg2.attrLocs);
 	meshDestroy(&mesh);
 	if (meshInitializeSphere(&mesh, 5.0, 8, 16) != 0)
 		return 11;
-	meshGLInitialize(&meshL, &mesh, 3, attrDims, 2);
+	meshGLInitialize(&meshL, &mesh, 3, attrDims, 3);
 	meshGLVAOInitialize(&meshL, 0, attrLocs);
 	meshGLVAOInitialize(&meshL, 1, sdwProg.attrLocs);
+	meshGLVAOInitialize(&meshL, 2, sdwProg2.attrLocs);
 	meshDestroy(&mesh);
 	if (sceneInitialize(&nodeW, 3, 1, &meshW, NULL, NULL) != 0)
 		return 14;
@@ -245,7 +258,7 @@ midway through, then does not properly deallocate all resources. But that's
 okay, because the program terminates almost immediately after this function
 returns. */
 int initializeCameraLight(void) {
-  GLdouble vec[3] = {30.0, 30.0, 5.0};
+  	GLdouble vec[3] = {30.0, 30.0, 5.0};
 	camSetControls(&cam, camPERSPECTIVE, M_PI / 6.0, 10.0, 768.0, 768.0, 100.0,
 								 M_PI / 4.0, M_PI / 4.0, vec);
 	lightSetType(&light, lightSPOT);
@@ -261,6 +274,24 @@ int initializeCameraLight(void) {
 		return 1;
 	if (shadowMapInitialize(&sdwMap, 1024, 1024) != 0)
 		return 2;
+
+	vecSet(3, vec, 40.0, 40.0, 5.0);
+	camSetControls(&cam, camPERSPECTIVE, M_PI / 6.0, 10.0, 768.0, 768.0, 100.0,
+								 M_PI / 4.0, M_PI / 4.0, vec);
+	lightSetType(&light2, lightSPOT);
+	vecSet(3, vec, 50.0, 40.0, 25.0);
+	lightShineFrom(&light2, vec, M_PI * 3.0 / 4.0, M_PI * 3.0 / 4.0);
+	vecSet(3, vec, 1.0, 0.0, 0.0);
+	lightSetColor(&light2, vec);
+	vecSet(3, vec, 1.0, 0.0, 0.0);
+	lightSetAttenuation(&light2, vec);
+	lightSetSpotAngle(&light2, M_PI / 2.0);
+	if (shadowProgramInitialize(&sdwProg2, 3) != 0)
+		return 3;
+	if (shadowMapInitialize(&sdwMap2, 1024, 1024) != 0)
+		return 4;
+
+
 	return 0;
 }
 
@@ -354,6 +385,7 @@ void render(void) {
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	GLint sdwTextureLocs[1] = {-1};
 	shadowMapRender(&sdwMap, &sdwProg, &light, -100.0, -1.0);
+	shadowMapRender(&sdwMap2, &sdwProg2, &light2, -100.0, -1.0);
 
 	// sceneRender(sceneNode *node, GLdouble parent[4][4], GLint modelingLoc,
 	// 	GLuint attrNum, GLuint attrDims[], GLint attrLocs[], GLuint VAOindex, GLint *textureLocs)
@@ -365,6 +397,7 @@ void render(void) {
 	/* Finish preparing the shadow maps, restore the viewport, and begin to
 	render the scene. */
 	shadowMapUnrender();
+
 	glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(program);
@@ -377,12 +410,15 @@ void render(void) {
 	lightRender(&light, lightPosLoc, lightColLoc, lightAttLoc, lightDirLoc,
 		lightCosLoc);
 	shadowRender(&sdwMap, viewingSdwLoc, GL_TEXTURE7, 7, textureSdwLoc);
+	lightRender(&light2, lightPosLoc2, lightColLoc2, lightAttLoc2, lightDirLoc2, lightCosLoc2);
+	shadowRender(&sdwMap2, viewingSdwLoc2, GL_TEXTURE6, 6, textureSdwLoc2);
 	GLuint unifDims[1] = {3};
 	sceneRender(&nodeH, identity, modelingLoc, 1, unifDims, unifLocs, 0,
 		textureLocs);
 	// printf("Render: sceneRender on scene finishes\n");
 	/* For each shadow-casting light, turn it off when finished rendering. */
 	shadowUnrender(GL_TEXTURE7);
+	shadowUnrender(GL_TEXTURE6);
 }
 
 int main(void) {
