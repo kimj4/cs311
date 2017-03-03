@@ -8,7 +8,8 @@
 #include <math.h>
 #include <stdarg.h>
 #include <GL/gl3w.h>
-#include <GLFW/glfw3.h>
+#include </usr/local/include/GLFW/glfw3.h>
+// #include "/usr/local/include/GLFW/glfw3.h"
 #include <sys/time.h>
 
 double getTime(void) {
@@ -31,7 +32,7 @@ camCamera cam;
 texTexture texH, texV, texW, texT, texL;
 meshGLMesh meshH, meshV, meshW, meshT, meshL;
 sceneNode nodeH, nodeV, nodeW, nodeT, nodeL;
-/* We need just one shadow program, because all of our meshes have the same 
+/* We need just one shadow program, because all of our meshes have the same
 attribute structure. */
 shadowProgram sdwProg;
 /* We need one shadow map per shadow-casting light. */
@@ -100,52 +101,52 @@ void handleKey(GLFWwindow *window, int key, int scancode, int action, int mods) 
 	}
 }
 
-/* Returns 0 on success, non-zero on failure. Warning: If initialization fails 
-midway through, then does not properly deallocate all resources. But that's 
-okay, because the program terminates almost immediately after this function 
+/* Returns 0 on success, non-zero on failure. Warning: If initialization fails
+midway through, then does not properly deallocate all resources. But that's
+okay, because the program terminates almost immediately after this function
 returns. */
 int initializeScene(void) {
-	if (texInitializeFile(&texH, "grass.jpg", GL_LINEAR, GL_LINEAR, 
+	if (texInitializeFile(&texH, "grass.jpg", GL_LINEAR, GL_LINEAR,
     		GL_REPEAT, GL_REPEAT) != 0)
     	return 1;
-    if (texInitializeFile(&texV, "granite.jpg", GL_LINEAR, GL_LINEAR, 
+    if (texInitializeFile(&texV, "granite.jpg", GL_LINEAR, GL_LINEAR,
     		GL_REPEAT, GL_REPEAT) != 0)
     	return 2;
-    if (texInitializeFile(&texW, "water.jpg", GL_LINEAR, GL_LINEAR, 
+    if (texInitializeFile(&texW, "water.jpg", GL_LINEAR, GL_LINEAR,
     		GL_REPEAT, GL_REPEAT) != 0)
     	return 3;
-    if (texInitializeFile(&texT, "trunk.jpg", GL_LINEAR, GL_LINEAR, 
+    if (texInitializeFile(&texT, "trunk.jpg", GL_LINEAR, GL_LINEAR,
     		GL_REPEAT, GL_REPEAT) != 0)
     	return 4;
-    if (texInitializeFile(&texL, "tree.jpg", GL_LINEAR, GL_LINEAR, 
+    if (texInitializeFile(&texL, "tree.jpg", GL_LINEAR, GL_LINEAR,
     		GL_REPEAT, GL_REPEAT) != 0)
     	return 5;
 	GLuint attrDims[3] = {3, 2, 3};
     double zs[12][12] = {
-		{5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 20.0}, 
-		{5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 20.0, 25.0}, 
-		{5.0, 5.0, 10.0, 12.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 20.0, 25.0}, 
-		{5.0, 5.0, 10.0, 10.0, 5.0, 5.0, 5.0, 5.0, 5.0, 20.0, 25.0, 27.0}, 
-		{0.0, 0.0, 5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 20.0, 20.0, 25.0}, 
-		{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20.0, 25.0}, 
-		{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, 
-		{0.0, 0.0, 0.0, 0.0, 0.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0}, 
-		{0.0, 0.0, 0.0, 0.0, 0.0, 5.0, 7.0, 0.0, 0.0, 0.0, 0.0, 0.0}, 
-		{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20.0, 20.0}, 
-		{5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20.0, 20.0, 20.0}, 
+		{5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 20.0},
+		{5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 20.0, 25.0},
+		{5.0, 5.0, 10.0, 12.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 20.0, 25.0},
+		{5.0, 5.0, 10.0, 10.0, 5.0, 5.0, 5.0, 5.0, 5.0, 20.0, 25.0, 27.0},
+		{0.0, 0.0, 5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 20.0, 20.0, 25.0},
+		{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20.0, 25.0},
+		{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0, 0.0, 0.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0, 0.0, 0.0, 5.0, 7.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20.0, 20.0},
+		{5.0, 5.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20.0, 20.0, 20.0},
 		{10.0, 10.0, 5.0, 5.0, 0.0, 0.0, 0.0, 5.0, 10.0, 15.0, 20.0, 25.0}};
 	double ws[12][12] = {
-		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, 
-		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, 
-		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, 
-		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, 
-		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, 
-		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, 
-		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, 
-		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, 
-		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, 
-		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, 
-		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, 
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
 		{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}};
 	meshMesh mesh, meshLand;
 	if (meshInitializeLandscape(&meshLand, 12, 12, 5.0, (double *)zs) != 0)
@@ -239,14 +240,14 @@ void destroyScene(void) {
 	sceneDestroyRecursively(&nodeH);
 }
 
-/* Returns 0 on success, non-zero on failure. Warning: If initialization fails 
-midway through, then does not properly deallocate all resources. But that's 
-okay, because the program terminates almost immediately after this function 
+/* Returns 0 on success, non-zero on failure. Warning: If initialization fails
+midway through, then does not properly deallocate all resources. But that's
+okay, because the program terminates almost immediately after this function
 returns. */
 int initializeCameraLight(void) {
-    GLdouble vec[3] = {30.0, 30.0, 5.0};
-	camSetControls(&cam, camPERSPECTIVE, M_PI / 6.0, 10.0, 768.0, 768.0, 100.0, 
-		M_PI / 4.0, M_PI / 4.0, vec);
+  GLdouble vec[3] = {30.0, 30.0, 5.0};
+	camSetControls(&cam, camPERSPECTIVE, M_PI / 6.0, 10.0, 768.0, 768.0, 100.0,
+								 M_PI / 4.0, M_PI / 4.0, vec);
 	lightSetType(&light, lightSPOT);
 	vecSet(3, vec, 45.0, 30.0, 20.0);
 	lightShineFrom(&light, vec, M_PI * 3.0 / 4.0, M_PI * 3.0 / 4.0);
@@ -349,7 +350,7 @@ void render(void) {
 
 	/* Save the viewport transformation. */
 	GLint viewport[4];
-	
+
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	GLint sdwTextureLocs[1] = {-1};
 	shadowMapRender(&sdwMap, &sdwProg, &light, -100.0, -1.0);
@@ -357,11 +358,11 @@ void render(void) {
 	// sceneRender(sceneNode *node, GLdouble parent[4][4], GLint modelingLoc,
 	// 	GLuint attrNum, GLuint attrDims[], GLint attrLocs[], GLuint VAOindex, GLint *textureLocs)
 
-	sceneRender(&nodeH, identity, sdwProg.modelingLoc, 0, NULL, NULL, 1, 
+	sceneRender(&nodeH, identity, sdwProg.modelingLoc, 0, NULL, NULL, 1,
 		sdwTextureLocs);
 	// printf("render: sceneRender on shadow finishes\n");
 
-	/* Finish preparing the shadow maps, restore the viewport, and begin to 
+	/* Finish preparing the shadow maps, restore the viewport, and begin to
 	render the scene. */
 	shadowMapUnrender();
 	glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
@@ -371,13 +372,13 @@ void render(void) {
 	GLfloat vec[3];
 	vecOpenGL(3, cam.translation, vec);
 	glUniform3fv(camPosLoc, 1, vec);
-	/* For each light, we have to connect it to the shader program, as always. 
+	/* For each light, we have to connect it to the shader program, as always.
 	For each shadow-casting light, we must also connect its shadow map. */
-	lightRender(&light, lightPosLoc, lightColLoc, lightAttLoc, lightDirLoc, 
+	lightRender(&light, lightPosLoc, lightColLoc, lightAttLoc, lightDirLoc,
 		lightCosLoc);
 	shadowRender(&sdwMap, viewingSdwLoc, GL_TEXTURE7, 7, textureSdwLoc);
 	GLuint unifDims[1] = {3};
-	sceneRender(&nodeH, identity, modelingLoc, 1, unifDims, unifLocs, 0, 
+	sceneRender(&nodeH, identity, modelingLoc, 1, unifDims, unifLocs, 0,
 		textureLocs);
 	// printf("Render: sceneRender on scene finishes\n");
 	/* For each shadow-casting light, turn it off when finished rendering. */
@@ -385,69 +386,64 @@ void render(void) {
 }
 
 int main(void) {
-
 	double oldTime;
 	double newTime = getTime();
-    glfwSetErrorCallback(handleError);
-    if (glfwInit() == 0) {
-    	fprintf(stderr, "main: glfwInit failed.\n");
-        return 1;
-    }
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+  glfwSetErrorCallback(handleError);
+  if (glfwInit() == 0) {
+  	fprintf(stderr, "main: glfwInit failed.\n");
+    return 1;
+  }
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    GLFWwindow *window;
-    window = glfwCreateWindow(768, 768, "Shadows", NULL, NULL);
-    if (window == NULL) {
-    	fprintf(stderr, "main: glfwCreateWindow failed.\n");
-        glfwTerminate();
-        return 2;
-    }
-    glfwSetWindowSizeCallback(window, handleResize);
-    glfwSetKeyCallback(window, handleKey);
-    glfwMakeContextCurrent(window);
-    if (gl3wInit() != 0) {
-    	fprintf(stderr, "main: gl3wInit failed.\n");
-    	glfwDestroyWindow(window);
-    	glfwTerminate();
-    	return 3;
-    }
+  GLFWwindow *window;
+  window = glfwCreateWindow(768, 768, "Shadows", NULL, NULL);
+  if (window == NULL) {
+  	fprintf(stderr, "main: glfwCreateWindow failed.\n");
+    glfwTerminate();
+    return 2;
+  }
+  glfwSetWindowSizeCallback(window, handleResize);
+  glfwSetKeyCallback(window, handleKey);
+  glfwMakeContextCurrent(window);
+  if (gl3wInit() != 0) {
+  	fprintf(stderr, "main: gl3wInit failed.\n");
+  	glfwDestroyWindow(window);
+  	glfwTerminate();
+  	return 3;
+  }
 
-    fprintf(stderr, "main: OpenGL %s, GLSL %s.\n", 
-		glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
-	/* We no longer do glDepthRange(1.0, 0.0). Instead we have changed our 
+  fprintf(stderr, "main: OpenGL %s, GLSL %s.\n",
+	glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
+	/* We no longer do glDepthRange(1.0, 0.0). Instead we have changed our
 	projection matrices. */
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    if (initializeShaderProgram() != 0)
-    	return 3;
-    /* Initialize the shadow mapping before the meshes. Why? */
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_CULL_FACE);
+  glCullFace(GL_BACK);
+  if (initializeShaderProgram() != 0)
+  	return 3;
+  /* Initialize the shadow mapping before the meshes. Why? */
 	if (initializeCameraLight() != 0)
 		return 4;
-    if (initializeScene() != 0)
-    	return 5;
-    while (glfwWindowShouldClose(window) == 0) {
-    	oldTime = newTime;
-    	newTime = getTime();
-    	if (floor(newTime) - floor(oldTime) >= 1.0)
-			fprintf(stderr, "main: %f frames/sec\n", 1.0 / (newTime - oldTime));
-
+  if (initializeScene() != 0)
+  	return 5;
+  while (glfwWindowShouldClose(window) == 0) {
+  	oldTime = newTime;
+  	newTime = getTime();
+  	if (floor(newTime) - floor(oldTime) >= 1.0)
+		fprintf(stderr, "main: %f frames/sec\n", 1.0 / (newTime - oldTime));
 		render();
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-    /* Deallocate more resources than ever. */
-    shadowProgramDestroy(&sdwProg);
-    shadowMapDestroy(&sdwMap);
-    glDeleteProgram(program);
-    destroyScene();
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+  }
+  /* Deallocate more resources than ever. */
+  shadowProgramDestroy(&sdwProg);
+  shadowMapDestroy(&sdwMap);
+  glDeleteProgram(program);
+  destroyScene();
 	glfwDestroyWindow(window);
-    glfwTerminate();
+  glfwTerminate();
 
-    return 0;
+  return 0;
 }
-
-

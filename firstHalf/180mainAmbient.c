@@ -125,7 +125,7 @@ void updateUniform(renRenderer *ren, double unif[], double unifParent[]) {
        unif[renUNIFCAMWORLDY]  = axis[1];
        unif[renUNIFCAMWORLDZ]  = axis[2];
         // copy into the current mesh's unif
-        mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
+       mat44Copy(ren->viewing, (double(*)[4])(&unif[renUNIFVIEWINGMAT]));
     }
 }
 
@@ -310,9 +310,7 @@ void handleKeyUp(int key, int shiftIsDown, int controlIsDown,
   }
   if (key) {
     draw();
-
   }
-
 }
 
 int main() {

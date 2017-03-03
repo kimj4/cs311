@@ -1,6 +1,3 @@
-
-
-
 /* On macOS, compile with...
     clang 500openGL20.c -lglfw -framework OpenGL
 */
@@ -46,10 +43,10 @@ void initializeMesh(void) {
 	glGenBuffers(2, buffers);
 	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
 	glBufferData(GL_ARRAY_BUFFER, vertNum * attrDim * sizeof(GLdouble),
-		(GLvoid *)attributes, GL_STATIC_DRAW);
+							 (GLvoid *)attributes, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triNum * 3 * sizeof(GLuint),
-		(GLvoid *)triangles, GL_STATIC_DRAW);
+							 (GLvoid *)triangles, GL_STATIC_DRAW);
 }
 
 /* This file contains general-purpose code for building 'shader programs'. In
@@ -150,8 +147,8 @@ int main(void) {
     glfwMakeContextCurrent(window);
     fprintf(stderr, "main: OpenGL %s, GLSL %s.\n",
 		glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
-	/* Notice that we're not enabling as many OpenGL features as in the
-	preceding tutorials. The shaders subsume many fixed-function features. */
+		/* Notice that we're not enabling as many OpenGL features as in the
+		preceding tutorials. The shaders subsume many fixed-function features. */
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -166,8 +163,8 @@ int main(void) {
     }
     /* Don't forget to deallocate the shader program. */
     glDeleteProgram(program);
-	glDeleteBuffers(2, buffers);
-	glfwDestroyWindow(window);
+		glDeleteBuffers(2, buffers);
+		glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
 }

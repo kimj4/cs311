@@ -161,7 +161,9 @@ void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
   double l[3] ={unif[renUNIFLIGHTX], unif[renUNIFLIGHTY], unif[renUNIFLIGHTZ]};
   double lUnit[3];
   vecUnit(3, l, lUnit);
-  double n[3] = {vary[renVARYWORLDNORMALX], vary[renVARYWORLDNORMALY], vary[renVARYWORLDNORMALZ]};
+  double n[3] = {vary[renVARYWORLDNORMALX],
+                 vary[renVARYWORLDNORMALY],
+                 vary[renVARYWORLDNORMALZ]};
   double diffuseIntensity;
   double dot = vecDot(3, lUnit, n);
   if (dot < 0) {
@@ -171,7 +173,9 @@ void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
   }
 
   // specular reflection stuff
-  double camPos[3] = {unif[renUNIFCAMWORLDX], unif[renUNIFCAMWORLDY], unif[renUNIFCAMWORLDZ]};
+  double camPos[3] = {unif[renUNIFCAMWORLDX],
+                      unif[renUNIFCAMWORLDY],
+                      unif[renUNIFCAMWORLDZ]};
   double camPosUnit[3];
   vecUnit(3, camPos, camPosUnit);
 

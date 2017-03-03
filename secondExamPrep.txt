@@ -1,0 +1,142 @@
+================================== Q1 ==================================
+Name the three kinds of lighting that we have used.
+  If you had to pick just one of them to have in your graphics engine,
+  which would you pick?
+  Which quantities are used in that lighting calculation?
+  Where is the calculation carried out?
+  How does each quantity get there?
+
+The three lights:
+- Diffuse reflection
+- Specular reflection
+- Ambient Lighting
+
+The most important one: Diffuse reflection
+- reason: it most accurately represents how we perceive light. Specular is sort
+  of limited to things that are shiny, and is not all that necessary while ambient
+  lighting is simply making things a little brighter (so that they aren't black)
+
+Quantities used in diffuse reflection
+- light position - used to calculate fragmentlight vector
+- fragment position - used to calculate fragmentlight vector
+- fragment normal vector - used to calculate the intensity of the reflected light
+- light rgb - scaled with the intensity
+- fragment rgb - scaled with the intensity
+
+Where the calculations are carried out
+- in our software engine, the calculations are done in the fragment shader
+
+How the quantities reach the shader
+- light position - a uniform location
+- fragment position - a varying location
+- fragment normal vector - a varying location (?)
+- light rgb - a uniform location
+- fragment rgb - a varying location
+
+- n dot l = cos(theta) where theta is the angle between the normal and the
+  fragment-to-light vector.
+- diffuseIntensity = max(0, n dot l)
+- reflection: diffuseIntensity * surfaceRGB * lightRGB
+
+These light vectors need to be in the same position as our fragments in world
+coordinates. So we need to run these vectors through the same transformations.
+However, we don't want translation since these are direction vectors. So to do
+perform just rotations, we append a 0 instead of a 1 on the homogenous vector
+
+
+
+The actual calculation:
+- the dot product between the vector from the fragment position to the light
+  position and the fragment normal vector determines the magnitude of the
+  diffuse reflection
+- Since the two vectors are unit vectors, the range of the dot product is -1 to 1
+- the range [-1, 0] are the values of the dot product for which there is no
+  diffuse reflection (the fragment does not have a direct path to the light)
+- the range (0,1] is when there is diffuse reflection. 1 is the max
+- !!! figure out if the light is additive or multiplicative !!!
+
+================================== Q2 ==================================
+Summarize the major differences between OpenGL 1.4 and OpenGL 3.2.
+   It may help you to work incrementally through 1.4, 1.5, 2.0, and 3.2.
+1.4 to 1.5:
+- ??? the introduction of buffers ???
+  !!! grab initial files off site !!!
+1.5 to 2.0:
+- the introduction of shader programs.
+2.0 to 3.2:
+- the introduction of vertex array objects
+- ??? allows deprecation capabilities ???
+
+================================== Q3 ==================================
+What is the difference between a texture and a texture unit?
+(Look up technical information)
+- Texture is a software thing.
+  - ??? a piece of memory that holds textures ???
+- a texture unit is a piece of hardware inside the GPU that performs the lookups
+
+================================== Q4 ==================================
+Q4 Describe the shadow mapping algorithm. How does it depend on the type of
+   light used? How does it depend on the number of lights used?
+
+The algorithm:
+- have a light source with a position, direction, and angle
+- place a camera at the same position, direction as the light source
+- render the scene onto a texture using only the depths
+- render for the second time from the point of view of the viewing camera and
+  perform texture lookups to the depth textures. If the fragment is shaded, the
+  color is black, and if the fragment is not shaded, it the color is whatever
+  the fragment's color is
+
+Variance with the number of lights:
+- a separate set of uniforms are needed for each light source
+- ??? each light source is an additional render pass ???
+- each light souce is an additional texture look up
+
+================================== Q5 ==================================
+In OpenGL, what does "bind" typically mean?
+
+
+================================== Q6 ==================================
+In OpenGL, what is the difference between a vertex buffer object and a
+   vertex array object? In our hardware engine, how many of each do we have
+   per mesh?
+
+- a vertex buffer stores information about the vertices of the triangles
+- a vertex array object stores information about how these vertices will be
+  rendered in the future
+- ??? a mesh contains a single vertex buffer object ???
+- ??? a mesh contains a single vertex array object ???
+
+================================== Q7 ==================================
+In OpenGL and GLSL, what is a "location"? What kinds of locations have we
+   seen? How are they used?
+- a location is a pointer to a variable in the shader program. We use it to pass
+  in values to the program
+
+================================== Q8 ==================================
+Compare and contrast the uniforms in our software and hardware engines.
+- software engine had a single array of uniforms while the hardware engine has
+  many small ones (because openGL likes them in these small chunks)???
+- ???
+
+================================== General Prep ==================================
+Specular Reflection
+- the angle of the light with the normal is the same as the angle of the reflection
+  with the normal
+- we place a camera, and have a direction vector from the fragment to the camera
+- specularIntensity = [max(0, r dot c)]^shininess
+  - larger shininess makes the specular highlight get smaller
+  - Finding the reflection vector:
+    - l and n are given
+    - let p be the projection l onto n
+      - p = (n dot l)n
+    - r = 2p - l = 2(n dot l)n - l
+  - specular reflecion = specularIntensity * lightRGB * clearcoatRGB
+- total reflection up to now:
+    diffuse + specular
+
+
+Ambient reflection
+Two options
+1) pick an ambientIntensity and add it onto the diffuseIntensity
+2) change diffuseIntensity max(0, n dot l) to max (ambientIntensity, n dot l)

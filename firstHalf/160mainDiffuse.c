@@ -162,6 +162,7 @@ void colorPixel(renRenderer *ren, double unif[], texTexture *tex[],
   } else {
     diffuseIntensity = dot;
   }
+  //
   rgbz[0] = tex[0]->sample[renTEXR] * diffuseIntensity * unif[renUNIFLIGHTR];
   rgbz[1] = tex[0]->sample[renTEXG] * diffuseIntensity * unif[renUNIFLIGHTG];
   rgbz[2] = tex[0]->sample[renTEXB] * diffuseIntensity * unif[renUNIFLIGHTB];
