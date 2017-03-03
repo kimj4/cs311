@@ -115,18 +115,21 @@ int initializeScene(void) {
 	if (texInitializeFile(&texH, "grass.jpg", GL_LINEAR, GL_LINEAR,
     		GL_REPEAT, GL_REPEAT) != 0)
     	return 1;
-    if (texInitializeFile(&texV, "granite.jpg", GL_LINEAR, GL_LINEAR,
-    		GL_REPEAT, GL_REPEAT) != 0)
-    	return 2;
-    if (texInitializeFile(&texW, "water.jpg", GL_LINEAR, GL_LINEAR,
-    		GL_REPEAT, GL_REPEAT) != 0)
-    	return 3;
-    if (texInitializeFile(&texT, "trunk.jpg", GL_LINEAR, GL_LINEAR,
-    		GL_REPEAT, GL_REPEAT) != 0)
-    	return 4;
-    if (texInitializeFile(&texL, "tree.jpg", GL_LINEAR, GL_LINEAR,
-    		GL_REPEAT, GL_REPEAT) != 0)
-    	return 5;
+			printf("%p\n", &texH);
+  if (texInitializeFile(&texV, "granite.jpg", GL_LINEAR, GL_LINEAR,
+  		GL_REPEAT, GL_REPEAT) != 0)
+  	return 2;
+		// printf("here\n");
+
+  if (texInitializeFile(&texW, "water.jpg", GL_LINEAR, GL_LINEAR,
+  		GL_REPEAT, GL_REPEAT) != 0)
+  	return 3;
+  if (texInitializeFile(&texT, "trunk.jpg", GL_LINEAR, GL_LINEAR,
+  		GL_REPEAT, GL_REPEAT) != 0)
+  	return 4;
+  if (texInitializeFile(&texL, "tree.jpg", GL_LINEAR, GL_LINEAR,
+  		GL_REPEAT, GL_REPEAT) != 0)
+  	return 5;
 	GLuint attrDims[3] = {3, 2, 3};
     double zs[12][12] = {
 		{5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 20.0},
@@ -296,6 +299,7 @@ int initializeCameraLight(void) {
 
 /* Returns 0 on success, non-zero on failure. */
 int initializeShaderProgram(void) {
+
 	GLchar vertexCode[] = "\
 		#version 140\n\
 		uniform mat4 viewing;\
@@ -371,6 +375,7 @@ int initializeShaderProgram(void) {
 		viewingSdwLoc = glGetUniformLocation(program, "viewingSdw");
 		textureSdwLoc = glGetUniformLocation(program, "textureSdw");
 	}
+
 	return (program == 0);
 }
 
@@ -450,12 +455,13 @@ int main(void) {
   }
 
   fprintf(stderr, "main: OpenGL %s, GLSL %s.\n",
-	glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
+					glGetString(GL_VERSION), glGetString(GL_SHADING_LANGUAGE_VERSION));
 	/* We no longer do glDepthRange(1.0, 0.0). Instead we have changed our
 	projection matrices. */
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
+
   if (initializeShaderProgram() != 0)
   	return 3;
   /* Initialize the shadow mapping before the meshes. Why? */
@@ -463,6 +469,7 @@ int main(void) {
 		return 4;
   if (initializeScene() != 0)
   	return 5;
+
   while (glfwWindowShouldClose(window) == 0) {
   	oldTime = newTime;
   	newTime = getTime();
