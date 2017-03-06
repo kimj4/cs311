@@ -467,6 +467,10 @@ void render(void) {
 	glUseProgram(program);
 	/* For each light, we have to connect it to the shader program, as always.
 	For each shadow-casting light, we must also connect its shadow map. */
+	camRender(&cam, viewingLoc);
+	GLfloat vec[3];
+	vecOpenGL(3, cam.translation, vec);
+	glUniform3fv(camPosLoc, 1, vec);
 	lightRender(&light, lightPosLoc, lightColLoc, lightAttLoc, lightDirLoc,
 							lightCosLoc);
 	shadowRender(&sdwMap, viewingSdwLoc, GL_TEXTURE7, 7, textureSdwLoc);
@@ -478,10 +482,6 @@ void render(void) {
 	sceneRender(&nodeH, identity, modelingLoc, 1, unifDims, unifLocs, 0,
 							textureLocs);
 
-	camRender(&cam, viewingLoc);
-	GLfloat vec[3];
-	vecOpenGL(3, cam.translation, vec);
-	glUniform3fv(camPosLoc, 1, vec);
 	/* For each shadow-casting light, turn it off when finished rendering. */
 	shadowUnrender(GL_TEXTURE7);
 	shadowUnrender(GL_TEXTURE6);
