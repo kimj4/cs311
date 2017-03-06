@@ -1,7 +1,17 @@
-
+/*
+ * 590mainShadowing.c
+ * altered from existing code by Josh Davis
+ * Ju Yun Kim
+ * Carleton College
+ * Late submission March 6, 2017
+ * Added functionality for two light sources with shadow mapping.
+ * One of the lights is red for ease of distinguishing.
+ */
 
 /* On macOS, compile with...
     clang 590mainShadowing.c /usr/local/gl3w/src/gl3w.o -lglfw -framework OpenGL -framework CoreFoundation
+		On Ubuntu 16, compile with...
+		clang 590mainShadowing.c /usr/local/gl3w/src/gl3w.o -lglfw3 -lGL -lm -lXrandr -lXi -lX11 -lXxf86vm -lpthread -ldl -lXinerama -lXcursor -lrt
 */
 
 #include <stdio.h>
@@ -103,6 +113,26 @@ void handleKey(GLFWwindow *window, int key, int scancode, int action, int mods) 
 			vecCopy(3, light.translation, vec);
 			vec[0] -= 1.0;
 			lightSetTranslation(&light, vec);
+		} else if (key == GLFW_KEY_Q) {
+			GLdouble vec[3];
+			vecCopy(3, light2.translation, vec);
+			vec[1] -= 1.0;
+			lightSetTranslation(&light2, vec);
+		} else if (key == GLFW_KEY_W) {
+			GLdouble vec[3];
+			vecCopy(3, light2.translation, vec);
+			vec[0] += 1.0;
+			lightSetTranslation(&light2, vec);
+		} else if (key == GLFW_KEY_E) {
+			GLdouble vec[3];
+			vecCopy(3, light2.translation, vec);
+			vec[0] -= 1.0;
+			lightSetTranslation(&light2, vec);
+		}else if (key == GLFW_KEY_R) {
+			GLdouble vec[3];
+			vecCopy(3, light2.translation, vec);
+			vec[1] += 1.0;
+			lightSetTranslation(&light2, vec);
 		}
 	}
 }
@@ -285,7 +315,7 @@ int initializeCameraLight(void) {
 	lightSetType(&light2, lightSPOT);
 	vecSet(3, vec, 50.0, 40.0, 25.0);
 	lightShineFrom(&light2, vec, M_PI * 3.0 / 4.0, M_PI * 3.0 / 4.0);
-	vecSet(3, vec, 1.0, 0.0, 0.0); // red light to distinguish itself
+	vecSet(3, vec, 1.0, 1.0, 1.0); // red light to distinguish itself
 	lightSetColor(&light2, vec);
 	vecSet(3, vec, 1.0, 0.0, 0.0);
 	lightSetAttenuation(&light2, vec);
@@ -421,7 +451,6 @@ void render(void) {
 	shadowMapRender(&sdwMap, &sdwProg, &light, -100.0, -1.0);
 	sceneRender(&nodeH, identity, sdwProg.modelingLoc, 0, NULL, NULL, 1,
 							sdwTextureLocs);
-	// shadowMapUnrender();
 
 	// second pass
 	shadowMapRender(&sdwMap2, &sdwProg2, &light2, -100.0, -1.0);
@@ -436,10 +465,6 @@ void render(void) {
 	glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(program);
-	// camRender(&cam, viewingLoc);
-	// GLfloat vec[3];
-	// vecOpenGL(3, cam.translation, vec);
-	// glUniform3fv(camPosLoc, 1, vec);
 	/* For each light, we have to connect it to the shader program, as always.
 	For each shadow-casting light, we must also connect its shadow map. */
 	lightRender(&light, lightPosLoc, lightColLoc, lightAttLoc, lightDirLoc,
@@ -453,11 +478,10 @@ void render(void) {
 	sceneRender(&nodeH, identity, modelingLoc, 1, unifDims, unifLocs, 0,
 							textureLocs);
 
-							camRender(&cam, viewingLoc);
-							GLfloat vec[3];
-							vecOpenGL(3, cam.translation, vec);
-							glUniform3fv(camPosLoc, 1, vec);
-	// printf("Render: sceneRender on scene finishes\n");
+	camRender(&cam, viewingLoc);
+	GLfloat vec[3];
+	vecOpenGL(3, cam.translation, vec);
+	glUniform3fv(camPosLoc, 1, vec);
 	/* For each shadow-casting light, turn it off when finished rendering. */
 	shadowUnrender(GL_TEXTURE7);
 	shadowUnrender(GL_TEXTURE6);
