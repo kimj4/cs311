@@ -76,8 +76,9 @@ void render(void) {
 	/* Send the arrays of attribute data to OpenGL. Notice that we're sending
 	the same array for positions and normals, because our mesh is special in
 	thter(GL_DOUBLE, 0, positions);
-	glColorPointer(3, GL_DOUBLE, 0, colors);
+	glColorPointer(3, GL_DOUBLE, 0, colors);*/
 	/* Draw the triangles, each one a triple of attribute array indices. */
+	printf("here\n");
   glDrawElements(GL_TRIANGLES, triNum * 3, GL_UNSIGNED_INT, triangles);
 }
 
@@ -118,6 +119,7 @@ int main(void) {
     glDisableClientState(GL_EDGE_FLAG_ARRAY);
     glDisableClientState(GL_INDEX_ARRAY);
     while (glfwWindowShouldClose(window) == 0) {
+
         render();
         glfwSwapBuffers(window);
         glfwPollEvents();

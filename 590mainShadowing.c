@@ -1,4 +1,5 @@
 
+
 /* On macOS, compile with...
     clang 590mainShadowing.c /usr/local/gl3w/src/gl3w.o -lglfw -framework OpenGL -framework CoreFoundation
 */
@@ -49,7 +50,6 @@ GLint attrLocs[3];
 GLint lightPosLoc, lightColLoc, lightAttLoc, lightDirLoc, lightCosLoc;
 GLint camPosLoc;
 GLint viewingSdwLoc, textureSdwLoc;
-//TODO: do i need two cameras?
 GLint lightPosLoc2, lightColLoc2, lightAttLoc2, lightDirLoc2, lightCosLoc2;
 GLint viewingSdwLoc2, textureSdwLoc2;
 
@@ -115,11 +115,10 @@ int initializeScene(void) {
 	if (texInitializeFile(&texH, "grass.jpg", GL_LINEAR, GL_LINEAR,
     		GL_REPEAT, GL_REPEAT) != 0)
     	return 1;
-			printf("%p\n", &texH);
   if (texInitializeFile(&texV, "granite.jpg", GL_LINEAR, GL_LINEAR,
   		GL_REPEAT, GL_REPEAT) != 0)
   	return 2;
-		// printf("here\n");
+		printf("here\n");
 
   if (texInitializeFile(&texW, "water.jpg", GL_LINEAR, GL_LINEAR,
   		GL_REPEAT, GL_REPEAT) != 0)
@@ -260,7 +259,9 @@ midway through, then does not properly deallocate all resources. But that's
 okay, because the program terminates almost immediately after this function
 returns. */
 int initializeCameraLight(void) {
-  	GLdouble vec[3] = {30.0, 30.0, 5.0};
+  GLdouble vec[3] = {30.0, 30.0, 5.0};
+
+	// for first light
 	camSetControls(&cam, camPERSPECTIVE, M_PI / 6.0, 10.0, 768.0, 768.0, 100.0,
 								 M_PI / 4.0, M_PI / 4.0, vec);
 	lightSetType(&light, lightSPOT);
@@ -277,34 +278,33 @@ int initializeCameraLight(void) {
 	if (shadowMapInitialize(&sdwMap, 1024, 1024) != 0)
 		return 2;
 
-	vecSet(3, vec, 40.0, 40.0, 5.0);
+	// for second light
+	vecSet(3, vec, 40.0, 35.0, 5.0);
 	camSetControls(&cam, camPERSPECTIVE, M_PI / 6.0, 10.0, 768.0, 768.0, 100.0,
 								 M_PI / 4.0, M_PI / 4.0, vec);
 	lightSetType(&light2, lightSPOT);
 	vecSet(3, vec, 50.0, 40.0, 25.0);
 	lightShineFrom(&light2, vec, M_PI * 3.0 / 4.0, M_PI * 3.0 / 4.0);
-	vecSet(3, vec, 1.0, 0.0, 0.0);
+	vecSet(3, vec, 1.0, 0.0, 0.0); // red light to distinguish itself
 	lightSetColor(&light2, vec);
 	vecSet(3, vec, 1.0, 0.0, 0.0);
 	lightSetAttenuation(&light2, vec);
-	lightSetSpotAngle(&light2, M_PI / 2.0);
+	lightSetSpotAngle(&light2, M_PI / 3.0);
 	if (shadowProgramInitialize(&sdwProg2, 3) != 0)
 		return 3;
 	if (shadowMapInitialize(&sdwMap2, 1024, 1024) != 0)
 		return 4;
-
-
 	return 0;
 }
 
 /* Returns 0 on success, non-zero on failure. */
 int initializeShaderProgram(void) {
-
 	GLchar vertexCode[] = "\
 		#version 140\n\
 		uniform mat4 viewing;\
 		uniform mat4 modeling;\
 		uniform mat4 viewingSdw;\
+		uniform mat4 viewingSdw2;\
 		in vec3 position;\
 		in vec2 texCoords;\
 		in vec3 normal;\
@@ -312,6 +312,7 @@ int initializeShaderProgram(void) {
 		out vec3 normalDir;\
 		out vec2 st;\
 		out vec4 fragSdw;\
+		out vec4 fragSdw2;\
 		void main(void) {\
 			mat4 scaleBias = mat4(\
 				0.5, 0.0, 0.0, 0.0, \
@@ -321,6 +322,7 @@ int initializeShaderProgram(void) {
 			vec4 worldPos = modeling * vec4(position, 1.0);\
 			gl_Position = viewing * worldPos;\
 			fragSdw = scaleBias * viewingSdw * worldPos;\
+			fragSdw2 = scaleBias * viewingSdw2 * worldPos;\
 			fragPos = vec3(worldPos);\
 			normalDir = vec3(modeling * vec4(normal, 0.0));\
 			st = texCoords;\
@@ -335,26 +337,45 @@ int initializeShaderProgram(void) {
 		uniform vec3 lightAtt;\
 		uniform vec3 lightAim;\
 		uniform float lightCos;\
+		uniform vec3 lightPos2;\
+		uniform vec3 lightCol2;\
+		uniform vec3 lightAtt2;\
+		uniform vec3 lightAim2;\
+		uniform float lightCos2;\
 		uniform sampler2DShadow textureSdw;\
+		uniform sampler2DShadow textureSdw2;\
 		in vec3 fragPos;\
 		in vec3 normalDir;\
 		in vec2 st;\
 		in vec4 fragSdw;\
+		in vec4 fragSdw2;\
 		out vec4 fragColor;\
 		void main(void) {\
 			vec3 diffuse = vec3(texture(texture0, st));\
+			vec3 diffuse2 = vec3(texture(texture0, st));\
 			vec3 litDir = normalize(lightPos - fragPos);\
+			vec3 litDir2 = normalize(lightPos2 - fragPos);\
 			float diffInt, specInt = 0.0;\
+			float diffInt2, specInt2 = 0.0;\
 			if (dot(lightAim, -litDir) < lightCos)\
 				diffInt = 0.0;\
 			else\
 				diffInt = 1.0;\
+			if (dot(lightAim2, -litDir2) < lightCos2)\
+				diffInt2 = 0.0;\
+			else\
+				diffInt2 = 1.0;\
 			float sdw = textureProj(textureSdw, fragSdw);\
 			diffInt *= sdw;\
 			specInt *= sdw;\
+			float sdw2 = textureProj(textureSdw2, fragSdw2);\
+			diffInt *= sdw2;\
+			specInt *= sdw2;\
 			vec3 diffRefl = max(0.2, diffInt) * lightCol * diffuse;\
+			vec3 diffRefl2 = max(0.2, diffInt2) * lightCol2 * diffuse2;\
 			vec3 specRefl = specInt * lightCol * specular;\
-			fragColor = vec4(diffRefl + specRefl, 1.0);\
+			vec3 specRefl2 = specInt2 * lightCol2 * specular;\
+			fragColor = vec4(diffRefl + specRefl + diffRefl2 + specRefl2, 1.0);\
 		}";
 	program = makeProgram(vertexCode, fragmentCode);
 	if (program != 0) {
@@ -372,8 +393,15 @@ int initializeShaderProgram(void) {
 		lightAttLoc = glGetUniformLocation(program, "lightAtt");
 		lightDirLoc = glGetUniformLocation(program, "lightAim");
 		lightCosLoc = glGetUniformLocation(program, "lightCos");
+		lightPosLoc2 = glGetUniformLocation(program, "lightPos2");
+		lightColLoc2 = glGetUniformLocation(program, "lightCol2");
+		lightAttLoc2 = glGetUniformLocation(program, "lightAtt2");
+		lightDirLoc2 = glGetUniformLocation(program, "lightAim2");
+		lightCosLoc2 = glGetUniformLocation(program, "lightCos2");
 		viewingSdwLoc = glGetUniformLocation(program, "viewingSdw");
+		viewingSdwLoc2 = glGetUniformLocation(program, "viewingSdw2");
 		textureSdwLoc = glGetUniformLocation(program, "textureSdw");
+		textureSdwLoc2 = glGetUniformLocation(program, "textureSdw2");
 	}
 
 	return (program == 0);
@@ -385,40 +413,50 @@ void render(void) {
 
 	/* Save the viewport transformation. */
 	GLint viewport[4];
-
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	GLint sdwTextureLocs[1] = {-1};
+	GLint sdwTextureLocs2[1] = {-1};
+
+	// first pass
 	shadowMapRender(&sdwMap, &sdwProg, &light, -100.0, -1.0);
-	shadowMapRender(&sdwMap2, &sdwProg2, &light2, -100.0, -1.0);
-
-	// sceneRender(sceneNode *node, GLdouble parent[4][4], GLint modelingLoc,
-	// 	GLuint attrNum, GLuint attrDims[], GLint attrLocs[], GLuint VAOindex, GLint *textureLocs)
-
 	sceneRender(&nodeH, identity, sdwProg.modelingLoc, 0, NULL, NULL, 1,
-		sdwTextureLocs);
-	// printf("render: sceneRender on shadow finishes\n");
+							sdwTextureLocs);
+	// shadowMapUnrender();
+
+	// second pass
+	shadowMapRender(&sdwMap2, &sdwProg2, &light2, -100.0, -1.0);
+	sceneRender(&nodeH, identity, sdwProg2.modelingLoc, 0, NULL, NULL, 1,
+							sdwTextureLocs2);
+
+	shadowMapUnrender();
 
 	/* Finish preparing the shadow maps, restore the viewport, and begin to
 	render the scene. */
-	shadowMapUnrender();
 
 	glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(program);
-	camRender(&cam, viewingLoc);
-	GLfloat vec[3];
-	vecOpenGL(3, cam.translation, vec);
-	glUniform3fv(camPosLoc, 1, vec);
+	// camRender(&cam, viewingLoc);
+	// GLfloat vec[3];
+	// vecOpenGL(3, cam.translation, vec);
+	// glUniform3fv(camPosLoc, 1, vec);
 	/* For each light, we have to connect it to the shader program, as always.
 	For each shadow-casting light, we must also connect its shadow map. */
 	lightRender(&light, lightPosLoc, lightColLoc, lightAttLoc, lightDirLoc,
-		lightCosLoc);
+							lightCosLoc);
 	shadowRender(&sdwMap, viewingSdwLoc, GL_TEXTURE7, 7, textureSdwLoc);
-	lightRender(&light2, lightPosLoc2, lightColLoc2, lightAttLoc2, lightDirLoc2, lightCosLoc2);
+
+	lightRender(&light2, lightPosLoc2, lightColLoc2, lightAttLoc2, lightDirLoc2,
+							lightCosLoc2);
 	shadowRender(&sdwMap2, viewingSdwLoc2, GL_TEXTURE6, 6, textureSdwLoc2);
 	GLuint unifDims[1] = {3};
 	sceneRender(&nodeH, identity, modelingLoc, 1, unifDims, unifLocs, 0,
-		textureLocs);
+							textureLocs);
+
+							camRender(&cam, viewingLoc);
+							GLfloat vec[3];
+							vecOpenGL(3, cam.translation, vec);
+							glUniform3fv(camPosLoc, 1, vec);
 	// printf("Render: sceneRender on scene finishes\n");
 	/* For each shadow-casting light, turn it off when finished rendering. */
 	shadowUnrender(GL_TEXTURE7);
@@ -445,8 +483,8 @@ int main(void) {
     return 2;
   }
   glfwSetWindowSizeCallback(window, handleResize);
-  glfwSetKeyCallback(window, handleKey);
   glfwMakeContextCurrent(window);
+	glfwSetKeyCallback(window, handleKey);
   if (gl3wInit() != 0) {
   	fprintf(stderr, "main: gl3wInit failed.\n");
   	glfwDestroyWindow(window);
@@ -481,7 +519,9 @@ int main(void) {
   }
   /* Deallocate more resources than ever. */
   shadowProgramDestroy(&sdwProg);
+	shadowProgramDestroy(&sdwProg2);
   shadowMapDestroy(&sdwMap);
+	shadowMapDestroy(&sdwMap2);
   glDeleteProgram(program);
   destroyScene();
 	glfwDestroyWindow(window);
